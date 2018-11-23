@@ -56,8 +56,8 @@ class Account(models.Model):
     name = models.CharField(
         max_length=20,
         verbose_name=_('Bank name'),
-        default= None,
-        null = False
+        null = False,
+        blank= False
 	)
 
     # def currency_list( blacklist ):
@@ -70,6 +70,8 @@ class Account(models.Model):
     slug = models.SlugField(
 		max_length=128,
 		verbose_name=_('Slug'),
+		null= True,
+		blank= True
     )
 
     currency = models.CharField(
@@ -77,7 +79,7 @@ class Account(models.Model):
 		#choices=currency_list(blacklist),
 		verbose_name=_('Currency'),
 		null= False,
-		default = 'USD'
+		blank= False
     )
 
     account_number = models.CharField(
@@ -93,6 +95,8 @@ class Account(models.Model):
 		max_digits=18,
 		decimal_places=10,
 		null= False,
+		blank= False,
+		default= 0,
 		verbose_name=_('Initial amount'),
     )
 

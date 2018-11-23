@@ -187,17 +187,22 @@ MINIMA_ALICUOTA = '99.75'
 
 ACCOUNT_EMAIL_REQUIRED = True
 ACCOUNT_USERNAME_REQUIRED = False
-ACCOUNT_AUTHENTICATION_METHOD = 'email'
+ACCOUNT_AUTHENTICATION_METHOD = "email"
 ACCOUNT_UNIQUE_EMAIL = True
 ACCOUNT_EMAIL_CONFIRMATION_EXPIRE_DAYS = 1
 #ACCOUNT_ADAPTER = 'condo_manager.adapters.CustomAdapter'
-
+LOGIN_URL = '/index'
 IMAGE_TYPES=  ('png','jpg','jpeg',)
 
-
+#EMAIL
 EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
-
+DEFAULT_FROM_EMAIL ='peto813@gmail.com'
 
 STATICFILES_DIRS = (
     os.path.join(BASE_DIR, "static", "project_static"), #this is where images, js and css go
+)
+
+AUTHENTICATION_BACKENDS = (
+    'django.contrib.auth.backends.ModelBackend',
+    'allauth.account.auth_backends.AuthenticationBackend',
 )
