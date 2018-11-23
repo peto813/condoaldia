@@ -122,6 +122,10 @@ class Condo(models.Model):
 		return smart_text(self.user.get_full_name() )
 
 class Inmueble(models.Model):
+	'''
+	Inmueble is Property in spanish
+	initial model was in spanish and name was kept for simplicity
+	'''
 	share = models.DecimalField(max_digits=7, decimal_places=4, null = False, blank = False, default = 0, verbose_name = _('percentage representation'))
 	rented = models.BooleanField(default = False, verbose_name = _('leased'))
 	rentee = models.OneToOneField( User, on_delete = models.SET_NULL, null = True, verbose_name = _('Rentee') )
@@ -133,6 +137,7 @@ class Inmueble(models.Model):
 	name = models.CharField(max_length=20, verbose_name=_('Property name'), null= False, help_text = 'House number or name; apartment number, etc')   
 	board_member = models.BooleanField( default = False, verbose_name = _('board member') )
 	#objects = InmuebleManager()
+	owned_since = models.DateTimeField(default = None, null= True )
 	created = models.DateTimeField(auto_now_add=True, null=True, verbose_name = _('Created'))
 
 	def clean(self):
@@ -141,6 +146,9 @@ class Inmueble(models.Model):
 			raise ValidationError({'share': _('Total condo shares can not be greater than 1 (100%).')})
 
 	def change_owner(self):
+		now= timezone.now()
+		self.owned_since = now
+		#send welcome email to new owner
 		pass
 
 	def change_rentee(self):

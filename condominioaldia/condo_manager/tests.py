@@ -8,6 +8,8 @@ class CondoTestCase(TestCase):
         user= User.objects.create(id_number="J8309920", mobile="04140934140", email ="peto813@gmail.com", first_name= "residencias kiara")
         condo=Condo.objects.create(user=user, approved=True, terms_accepted= True, active= True)
         Inmueble.objects.create(condo= condo, share= 23, initial_balance = 0, balance = 0, name= '1-a')
+        self.user = user
+        self.condo= condo
 
     def test_condo_can_get_share_sum(self):
         """Condo can get sum of its properties correctly"""
@@ -15,3 +17,7 @@ class CondoTestCase(TestCase):
         condo = Condo.objects.get(user=user)
         total = condo.get_share_sum()
         assert 0 <= total <= 100
+    
+    # def test_condo_is_clean(self):
+    # 	#condo = Condo.objects.get(user=user)
+    # 	self.condo.clean()
