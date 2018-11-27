@@ -10,6 +10,7 @@ router.register(r'residents', views.ResidentViewSet, basename='residents')
 
 urlpatterns = [
 	re_path(r'^registration/account-confirm-email/(?P<key>[-:\w]+)/', views.CustomConfirmEmailView.as_view()),
-	path('<int:condo_id>/', views.CondoViewSet.as_view({'get': 'retrieve'})),
-    path('<int:condo_id>/', include(router.urls))
+	path('', views.CondoViewSet.as_view({'get': 'retrieve'})),
+    #path('<int:condo_id>/residents/', views.ResidentRegisterView.as_view()),
+    path('/', include(router.urls))
 ]

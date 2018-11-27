@@ -12,18 +12,20 @@ from django.utils.translation import ugettext_lazy as _
 class UserAdmin(BaseUserAdmin):
     readonly_fields = ('get_role',)
     def get_role(self, user):
-    	roles = get_user_roles(user)
-    	role_names = [item.get_name() for item in roles]
-    	if 'condo' in role_names:
-    		return 'condo'
-    	elif user.is_staff:
-    		return 'staff'
-    	elif user.is_superuser:
-    		return 'superuser'
+        roles = get_user_roles(user)
+        role_names = [item.get_name() for item in roles]
+        if 'condo' in role_names:
+            return 'condo'
+        elif 'resident' in role_names:
+            return 'resident'            
+        elif user.is_staff:
+            return 'staff'
+        elif user.is_superuser:
+            return 'superuser'
     		
-    	return 'not found'
+        return 'not found'
     get_role.short_description = _("role")
-    list_display = ('email', 'first_name','last_name','mobile', 'get_role',)
+    list_display = ('id','username','email', 'first_name','last_name','mobile', 'get_role',)
 
 
 @admin.register(Condo)
@@ -48,4 +50,8 @@ class InmuebleAdmin(admin.ModelAdmin):
 
 @admin.register(Resident)
 class ResidentAdmin(admin.ModelAdmin):
-	pass
+    list_display = ('id','name',)
+    readonly_fields = ('name',)
+
+    def name(self, resident):
+        return resident.user.get_full_name()

@@ -45,14 +45,16 @@ INSTALLED_APPS = [
     'rest_framework.authtoken',
     'rest_auth',
     'rest_auth.registration',
-    'import_export',
     'djmoney',
     'rolepermissions',
+    'django_libs',
     'django_countries',
-    'bank_keeping',
+    'account_keeping',
+    'currency_history',
+    'import_export',
     'condo_manager',
-
 ]
+
 SITE_ID = 1
 
 MIDDLEWARE = [
@@ -185,11 +187,13 @@ ROLEPERMISSIONS_MODULE = 'condominioaldia.roles'
 
 MINIMA_ALICUOTA = '99.75'
 
+ACCOUNT_ADAPTER ='condo_manager.adapters.CustomAccountAdapter'
 ACCOUNT_EMAIL_REQUIRED = True
 ACCOUNT_USERNAME_REQUIRED = False
 ACCOUNT_AUTHENTICATION_METHOD = "email"
 ACCOUNT_UNIQUE_EMAIL = True
 ACCOUNT_EMAIL_CONFIRMATION_EXPIRE_DAYS = 1
+ACCOUNT_USER_MODEL_USERNAME_FIELD  =None
 #ACCOUNT_ADAPTER = 'condo_manager.adapters.CustomAdapter'
 LOGIN_URL = '/index'
 IMAGE_TYPES=  ('png','jpg','jpeg',)
@@ -206,3 +210,5 @@ AUTHENTICATION_BACKENDS = (
     'django.contrib.auth.backends.ModelBackend',
     'allauth.account.auth_backends.AuthenticationBackend',
 )
+
+CURRENCY_SERVICE= 'fixer'

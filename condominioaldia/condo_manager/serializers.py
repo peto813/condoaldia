@@ -32,8 +32,6 @@ class CustomRegisterSerializer(RegisterSerializer):
 		adapter = get_adapter()
 		user = adapter.new_user(request)
 		user.id_number = self.validated_data.get('id_number')
-		print(self.validated_data)
-		print(self.validated_data.get('id_number' or None))
 		user.save()
 		self.cleaned_data = self.get_cleaned_data()
 		adapter.save_user(request, user, self)
@@ -61,6 +59,8 @@ class CondoSerializer(serializers.ModelSerializer):
 class BaseInmuebleSerializer(serializers.ModelSerializer):
 	class Meta:
 		fields = '__all__'
+		read_only_fields=('owned_since',)
+		#exclude = ['owned_since']
 		model  = Inmueble
 
 class InmuebleSerializer(BaseInmuebleSerializer):
@@ -74,13 +74,68 @@ class ResidentInmuebleSerializer(BaseInmuebleSerializer):
 class ResidentUserSerializer(BaseUserSerializer):
 	class Meta(BaseUserSerializer.Meta):
 	# 	model  = User
-		fields= ['email']
+		fields= ['email', 'first_name', 'last_name']
 
 class ResidentSerializer(serializers.ModelSerializer):
-	user= ResidentUserSerializer()
-	#inmueble =  serializers.PrimaryKeyRelatedField(queryset=Inmueble.objects.all())
-	inmueble=ResidentInmuebleSerializer()
+	user = ResidentUserSerializer()
+	inmueble =  serializers.PrimaryKeyRelatedField(queryset=Inmueble.objects.all(), write_only= True)
+	#inmueble=ResidentInmuebleSerializer()
 	class Meta:
 		fields = ['user', 'inmueble']
 		model  = Resident
 
+	def create(self,vd, *args, **kwargs):
+		request= self.context.get("request")
+		user_data = vd.pop('user')
+		inmueble = vd.pop('inmueble')
+		#adapter = get_adapter()
+		user, created = User.objects.get_or_create(email = user_data.get('email'))
+		if created:
+			user.first_name= user_data.get('first_name' or None)
+			user.last_name= user_data.get('last_name' or None)
+			user.set_unusable_password()
+			user.save()
+			user.inmueble_instance=inmueble
+			resident = Resident(user= user,**vd)
+			resident.request= request
+			#resident.adapter = adapter
+			#resident.setup_user_email= setup_user_email
+			resident.save()
+			inmueble.resident = resident
+			inmueble.save()
+			return resident
+
+		return user.resident
+
+	# def get_cleaned_data(self):
+	# 	return {
+	# 		'username': self.validated_data.get('username', ''),
+	# 		'password1': self.validated_data.get('password1', ''),
+	# 		'email': self.validated_data.get('email', '')
+	# 	}
+
+	# def custom_signup(self, request, user):
+	# 	vd = self.validated_data
+	# 	user_data = vd.get('user')
+	# 	user.first_name= user_data.get('first_name' or None)
+	# 	user.last_name= user_data.get('last_name' or None)
+	# 	user.email= user_data.get('email' or None)
+	# 	user.save()
+
+	# def save(self, request):
+	# 	vd = self.validated_data
+	# 	adapter = get_adapter()
+	# 	user = adapter.new_user(request)
+	# 	inmueble = vd.get('inmueble')
+
+	# 	self.cleaned_data = self.get_cleaned_data()
+
+	# 	user= adapter.save_user(request, user, self)
+	# 	resident = Resident.objects.create(user= user)
+	# 	inmueble.resident = resident
+	# 	inmueble.save()
+	# 	#resident.save()
+	# 	#assign_role(user, 'condo')
+	# 	self.custom_signup(request, user)
+	# 	#setup_user_email(request, user, [])
+	# 	return user

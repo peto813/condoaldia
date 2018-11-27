@@ -1,4 +1,4 @@
-import os, shutil, decimal
+import os, shutil, decimal, string, random
 from django.utils import timezone
 from django.db import models
 from django.contrib.auth.models import AbstractUser
@@ -15,6 +15,8 @@ from django.core.exceptions import ValidationError
 # Create your models here.
 from django.db.models import Sum
 
+#from allauth.account.utils import send_email_confirmation
+from django.contrib.sites.shortcuts import get_current_site
 
 
 
@@ -67,12 +69,36 @@ class User(AbstractUser):
 
 class Resident(models.Model):
 	user= models.OneToOneField(User, on_delete = models.CASCADE)
+
+	def send_welcome_email(self, inmueble, request):
+		#current_site= Site.objects.get_current()
+		current_site = get_current_site(request)
+		condo_name= inmueble.condo.user.get_full_name()
+		property_name= inmueble.name
+
+		subject = loader.render_to_string('account/email/resident_welcome_subject.txt', {'condo_name':condo_name})
+		message = loader.render_to_string('account/email/resident_welcome_message.txt', {'current_site': current_site, 'condo_name':condo_name, 'property_name':property_name})
+		
+		fromEmail = str(settings.DEFAULT_FROM_EMAIL)
+		emailList = [ self.user.email ]
+		#send_email_confirmation(request, user, signup=False)
+		self.user.email_user(subject, message, fromEmail, emailList, fail_silently = False )
+		#send_email.delay(subject, message, fromEmail, emailList, fail_silently = False )
+		#self.fecha_aprobacion = timezone.now()
+		#send welcome email to new owner
+		#self.setup_user_email(self.request, self.user, [])
+
+	def id_generator(self, size=6, chars=(string.ascii_uppercase + string.digits)):
+		return ''.join(random.choice(chars) for _ in range(size))
+
 	def assign_property(self, property):
 		pass
 
 	def remove_property(self, property):
 		pass
 
+	def __str__(self):
+		return smart_text(self.user.get_full_name() )
 
 class Condo(models.Model):
 	APPROVAL_CHOICES = (
@@ -96,18 +122,20 @@ class Condo(models.Model):
 
 	def approve(self):
 		#need to set approval date
-		self.send_email_confirmed()
+		self.approval_date = timezone.now()
+		self.save()
+		self.send_condo_approved_email()
 
 	def bill_property(self):
 		pass
 
-	def add_property(self, inmueble):
-		self.inmuebles.add(inmueble)
+	# def add_property(self, inmueble):
+	# 	self.inmuebles.add(inmueble)
 
-	def remove_property(self, inmueble):
-		self.inmuebles.remove(inmueble)
+	# def remove_property(self, inmueble):
+	# 	self.inmuebles.remove(inmueble)
 
-	def send_email_confirmed(self):
+	def send_condo_approved_email(self):
 		site= Site.objects.get_current().domain
 		subject = loader.render_to_string('account/email/condo_approved_subject.txt', {})
 		message = loader.render_to_string('account/email/condo_approved_message.txt', {'name' : self.user.first_name, 'site_name': site})
@@ -115,8 +143,6 @@ class Condo(models.Model):
 		emailList = [ self.user.email ]
 		self.user.email_user(subject, message, fromEmail, emailList, fail_silently = False )
 		#send_email.delay(subject, message, fromEmail, emailList, fail_silently = False )
-		self.fecha_aprobacion = timezone.now()
-		self.save()
 
 	def __str__(self):
 		return smart_text(self.user.get_full_name() )
@@ -136,7 +162,6 @@ class Inmueble(models.Model):
 	resident = models.ForeignKey(Resident, null = True, related_name = 'inmuebles', on_delete = models.SET_NULL,)
 	name = models.CharField(max_length=20, verbose_name=_('Property name'), null= False, help_text = 'House number or name; apartment number, etc')   
 	board_member = models.BooleanField( default = False, verbose_name = _('board member') )
-	#objects = InmuebleManager()
 	owned_since = models.DateTimeField(default = None, null= True )
 	created = models.DateTimeField(auto_now_add=True, null=True, verbose_name = _('Created'))
 
@@ -144,12 +169,27 @@ class Inmueble(models.Model):
 		share_sum = self.condo.get_share_sum()
 		if share_sum + self.share>1:
 			raise ValidationError({'share': _('Total condo shares can not be greater than 1 (100%).')})
+	
+	# def send_new_rentee_email(self):
+	# 	site= Site.objects.get_current().domain
+	# 	subject = loader.render_to_string('account/email/new_owner_email_subject.txt', {})
+	# 	message = loader.render_to_string('account/email/new_owner_email_message.txt', {'name' : self.user.first_name, 'site_name': site})
+	# 	fromEmail = str(settings.DEFAULT_FROM_EMAIL)
+	# 	emailList = [ self.resident.user.email ]
+	# 	self.resident.user.email_user(subject, message, fromEmail, emailList, fail_silently = False )
 
-	def change_owner(self):
-		now= timezone.now()
-		self.owned_since = now
-		#send welcome email to new owner
-		pass
+	# def send_new_resident_email(self):
+	# 	site= Site.objects.get_current()
+	# 	subject = loader.render_to_string('account/email/resident_email_confirmation_signup_subject.txt', {})
+	# 	message = loader.render_to_string('account/email/resident_email_confirmation_signup_message.txt', {'name' : self.resident.user, 'site': site, 'user':self.resident.user, 'condo':self.condo})
+		
+	# 	fromEmail = str(settings.DEFAULT_FROM_EMAIL)
+	# 	emailList = [ self.resident.user.email ]
+	# 	#send_email_confirmation(request, user, signup=False)
+	# 	self.resident.user.email_user(subject, message, fromEmail, emailList, fail_silently = False )
+	# 	#send_email.delay(subject, message, fromEmail, emailList, fail_silently = False )
+	# 	#self.fecha_aprobacion = timezone.now()
+	# 	#send welcome email to new owner
 
 	def change_rentee(self):
 		pass
