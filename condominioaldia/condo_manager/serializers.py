@@ -8,21 +8,8 @@ from django.utils.translation import ugettext_lazy as _
 from django.contrib.auth import get_user_model
 from .models import Condo, Inmueble, Resident
 from rolepermissions.roles import assign_role
-from condo_manager.models import  BankAccount
-
 
 User = get_user_model()
-
-
-
-class BankAccountSerializer(serializers.ModelSerializer):
-	class Meta:
-		fields = ['name', 'account_number','routing_number','currency', 'initial_amount', 'total_amount', 'active']
-		#fields= '_all_'
-		model  = BankAccount
-		# extra_kwargs = {
-		# 	'password': {'write_only': True}
-		# }
 
 class CustomRegisterSerializer(RegisterSerializer):
 	#username = None
@@ -30,9 +17,6 @@ class CustomRegisterSerializer(RegisterSerializer):
 	password2 = serializers.CharField(style={'input_type': 'password'},write_only=True, min_length = 8, allow_blank=False, trim_whitespace=True)
 	id_number = serializers.CharField()
 	id_proof = serializers.ImageField(required= True)
-
-	# def validate_username(self, username):
-	# 	return None
 
 	def validate_id_proof(self, id_proof):
 		content_type= id_proof.content_type.split('/')[1]

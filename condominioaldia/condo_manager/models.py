@@ -17,17 +17,9 @@ from django.db.models import Sum
 
 #from allauth.account.utils import send_email_confirmation
 from django.contrib.sites.shortcuts import get_current_site
-from account_keeping.models import Account
 
 
 
-class BankAccount(Account):
-	condo = models.ForeignKey('Condo', on_delete=models.CASCADE, related_name="bank_accounts", null= False)
-	account_number= models.CharField(max_length=25, null= False, blank= False)
-	routing_number = models.CharField(max_length=25, null= True, blank= True)
-	def __str__(self):
-		return smart_text(self.name )
-		
 class User(AbstractUser):
 	#location = models.CharField(max_length=250, null= True)
 	#rif = models.CharField( max_length = 16, unique = True, blank = False, verbose_name = _('Fiscal number') )
@@ -128,11 +120,8 @@ class Condo(models.Model):
 		total = self.inmuebles.all().aggregate(share= Sum('share'))['share'] or decimal.Decimal(0)
 		return total
 
-	def get_bank_accounts(self):
-		pass
-
 	def create_bank_account(self, data):
-		bank_account= BankAccount.objects.create(condo=self,**data)
+		bank_account= BankAccount.objects.create(condo=self.user,**data)
 		self.bank_accounts.add( bank_account)
 		
 

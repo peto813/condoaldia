@@ -6,7 +6,7 @@ from django.shortcuts import get_object_or_404
 #from rest_framework.views import APIView
 from condo_manager.models import Condo, Inmueble, Resident
 from rest_framework.permissions import IsAuthenticated, AllowAny
-from condo_manager.serializers import BankAccountSerializer, CondoSerializer, InmuebleSerializer, ResidentSerializer
+from condo_manager.serializers import  CondoSerializer, InmuebleSerializer, ResidentSerializer
 from rest_framework import status
 from rest_framework.views import APIView
 from rest_framework.response import Response
@@ -20,9 +20,8 @@ from rest_auth.registration.views import RegisterView
 from allauth.account.utils import complete_signup
 from rest_auth.app_settings import create_token
 from allauth.account import app_settings as allauth_settings
-from condo_manager.models import BankAccount
 from rest_framework.generics import ListCreateAPIView, DestroyAPIView
-from condo_manager.permissions import CondoOnly, IsBankAccountOwner
+
 
 class CreateListRetrieveViewSet(mixins.CreateModelMixin,
                                 mixins.ListModelMixin,
@@ -49,41 +48,6 @@ class CondoViewSet( RetrieveViewSet ):
 		return Response(serializer.data)
 
 
-class BankAccountsViewSet(CreateListRetrieveViewSet, mixins.DestroyModelMixin):
-	queryset = BankAccount.objects.all()
-	serializer_class = BankAccountSerializer
-	permission_classes= (IsAuthenticated, CondoOnly, IsBankAccountOwner)
-
-	def get_queryset(self):
-		return self.queryset.filter(condo= self.request.user.condo)
-
-	def get_condo_or_404(self, condo_id):
-		condo= get_object_or_404(Condo, pk= condo_id)
-		return condo
-
-	def perform_create(self, serializer):
-		self.condo.create_bank_account(serializer.validated_data)
-
-	def create(self, request, condo_id=None,*args, **kwargs):
-		self.condo = self.get_condo_or_404(condo_id)
-		serializer = self.get_serializer(data=request.data)
-		serializer.is_valid(raise_exception=True)
-		self.perform_create(serializer)
-		headers = self.get_success_headers(serializer.data)
-		return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
-
-	# def list(self, request, condo_id=None, *args, **kwargs):
-	# 	self.get_condo_or_404(condo_id)
-	# 	return super().list(request, args, kwargs)
-	# 	#self.get_condo_or_404(condo_id)
-	# 	queryset = self.filter_queryset(self.get_queryset().filter(condo = condo_id))
-	# 	page = self.paginate_queryset(queryset)
-	# 	if page is not None:
-	# 		serializer = self.get_serializer(page, many=True)
-	# 		return self.get_paginated_response(serializer.data)
-
-	# 	serializer = self.get_serializer(queryset, many=True)
-	# 	return Response(serializer.data)
 
 class InmuebleViewSet(CreateListRetrieveViewSet, mixins.UpdateModelMixin):
 	queryset= Inmueble.objects.all()
