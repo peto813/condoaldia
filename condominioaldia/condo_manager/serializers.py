@@ -8,6 +8,7 @@ from django.utils.translation import ugettext_lazy as _
 from django.contrib.auth import get_user_model
 from .models import Condo, Inmueble, Resident
 from rolepermissions.roles import assign_role
+from django_countries.serializer_fields import CountryField
 
 User = get_user_model()
 
@@ -31,13 +32,9 @@ class CustomRegisterSerializer(RegisterSerializer):
 	def save(self, request):
 		adapter = get_adapter()
 		user = adapter.new_user(request)
-		print(1)
 		user.id_number = self.validated_data.get('id_number')
-		print(2)
 		user.save()
-		print(3)
 		self.cleaned_data = self.get_cleaned_data()
-		print(4)
 		adapter.save_user(request, user, self)
 		condominio = Condo(user= user, id_proof= self.validated_data.get('id_proof'))
 		condominio.save()
@@ -46,7 +43,8 @@ class CustomRegisterSerializer(RegisterSerializer):
 		setup_user_email(request, user, [])
 		return user
 
-class BaseUserSerializer(serializers.ModelSerializer):
+class BaseUserSerializer(serializers.HyperlinkedModelSerializer):
+	country = CountryField()
 	class Meta:
 		fields = '__all__'
 		#fields= '_all_'

@@ -1,6 +1,7 @@
 import numbers
 from django.test import TestCase
 from condo_manager.models import Resident, Condo, User, Inmueble, Resident
+from currency_history.models import Currency
 from numbers import Number
 
 '''
@@ -17,7 +18,8 @@ class CondoTestCase(TestCase):
         user= User.objects.create(id_number="J8309920", mobile="04140934140", email ="12@gmail.com", first_name= "residencias kiara")
         condo=Condo.objects.create(user=user, approved=False, terms_accepted= True, active= True)
         inmueble= Inmueble.objects.create(condo= condo, share= 23, initial_balance = 0, balance = 0, name= '1-a')
-
+        currency = Currency.objects.create(iso_code='USD',title='bolivar soberano', abbreviation= 'Bs')
+        #account = Currency.objects.create(iso_code='USD',title='bolivar soberano', abbreviation= 'Bs')
     def test_condo_can_get_share_sum(self):
         """Condo can get sum of its properties correctly"""
         user = User.objects.get(email="12@gmail.com")
@@ -32,6 +34,21 @@ class CondoTestCase(TestCase):
         assert (condo.approval_date ==None)
         condo.approve()
         assert  (condo.approval_date !=None)
+
+    def test_create_bank_account(self):
+        """Condo can get sum of its properties correctly"""
+        user = User.objects.get(email="12@gmail.com")
+        condo = Condo.objects.get(user=user)
+        currency = Currency.objects.get(iso_code='USD')
+        data ={
+            'name':'usd account',
+            'account_number': '01340262142623025724',
+            'currency': currency
+        }
+        condo.create_bank_account(data)
+        # assert (condo.approval_date ==None)
+        # condo.approve()
+        # assert  (condo.approval_date !=None)
 
 class InmuebleTestCase(TestCase):
     def setUp(self):

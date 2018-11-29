@@ -121,8 +121,9 @@ class Condo(models.Model):
 		return total
 
 	def create_bank_account(self, data):
-		bank_account= BankAccount.objects.create(condo=self.user,**data)
-		self.bank_accounts.add( bank_account)
+		from account_keeping.models import Account
+		bank_account= Account.objects.create(user=self.user,**data)
+		self.user.bank_accounts.add( bank_account)
 		
 
 	def approve(self):
