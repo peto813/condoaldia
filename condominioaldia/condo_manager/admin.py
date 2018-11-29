@@ -8,6 +8,9 @@ from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 from rolepermissions.roles import get_user_roles
 from django.utils.translation import ugettext_lazy as _
 
+
+
+
 @admin.register(User)
 class UserAdmin(BaseUserAdmin):
     readonly_fields = ('get_role',)
@@ -25,10 +28,7 @@ class UserAdmin(BaseUserAdmin):
     		
         return 'not found'
     get_role.short_description = _("role")
-    list_display = ('id','username','email', 'first_name','last_name','mobile', 'get_role',)
-
-
-
+    list_display = ('id','username','email', 'first_name','last_name','mobile', 'get_role','country',)
 
 @admin.register(Condo)
 class CondoAdmin(admin.ModelAdmin):

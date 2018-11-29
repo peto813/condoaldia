@@ -18,7 +18,11 @@ class CustomRegisterSerializer(RegisterSerializer):
 	password2 = serializers.CharField(style={'input_type': 'password'},write_only=True, min_length = 8, allow_blank=False, trim_whitespace=True)
 	id_number = serializers.CharField()
 	id_proof = serializers.ImageField(required= True)
-
+	terms = serializers.BooleanField(required= True)
+	def validate_terms(self, terms):
+		if not terms:
+			raise serializers.ValidationError(_('You must accepd terms and conditions.'))
+		return terms
 	def validate_id_proof(self, id_proof):
 		content_type= id_proof.content_type.split('/')[1]
 		if content_type not in settings.IMAGE_TYPES:
@@ -46,11 +50,12 @@ class CustomRegisterSerializer(RegisterSerializer):
 class BaseUserSerializer(serializers.HyperlinkedModelSerializer):
 	country = CountryField()
 	class Meta:
-		fields = '__all__'
+		fields = ['id', 'country']
 		#fields= '_all_'
 		model  = User
 		extra_kwargs = {
-			'password': {'write_only': True}
+			'password': {'write_only': True},
+			'url': {'view_name': 'rest_framew:user-details-view', 'lookup_field': 'pk'},
 		}
 
 class CondoSerializer(serializers.ModelSerializer):

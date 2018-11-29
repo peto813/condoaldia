@@ -23,14 +23,14 @@ from django.contrib.sites.shortcuts import get_current_site
 class User(AbstractUser):
 	#location = models.CharField(max_length=250, null= True)
 	#rif = models.CharField( max_length = 16, unique = True, blank = False, verbose_name = _('Fiscal number') )
-	id_number = models.CharField(max_length=100, verbose_name=_('Fiscal Number'))
+	id_number = models.CharField(max_length=100, verbose_name=_('Fiscal Number'), unique= True)
 	mobile=models.CharField( null= True, blank = True, max_length=15)
 	office=models.CharField( null= True, blank = True, max_length=15)
 	other=models.CharField( null= True, blank = True, max_length=15)
 	state = models.CharField( max_length = 40, null = True, default = '', blank = True,verbose_name = _('state' ))
 	city = models.CharField( max_length = 40, null = True, default = '', blank = False, verbose_name = _('municipality') )
 	address = models.CharField( max_length = 200, null = True, verbose_name = _('address') )
-	country =  CountryField(null= True)
+	country =  CountryField(null= False, blank = True)
 
 	#special=models.BooleanField(default= False)
 	# class Meta:
@@ -44,7 +44,7 @@ class User(AbstractUser):
 		'''
 		full_name = '%s %s' % (self.first_name, self.last_name)
 		if not self.first_name and not self.last_name:
-			full_name= self.email
+			full_name= self.condo.razon_social if hasattr(self, 'condo') else self.email
 		return full_name.strip()
 
 	def get_short_name(self):
@@ -106,6 +106,7 @@ class Condo(models.Model):
 		(True, _("Approved")),
 		(False, _("Rejected")),
 	)
+	razon_social = models.CharField(max_length=25, blank = False, null = False, verbose_name = _('Condo name'))
 	user = models.OneToOneField(User, on_delete = models.CASCADE, null = True, verbose_name = _('user'))
 	residents = models.ManyToManyField(Resident, through = 'Inmueble', related_name='resident_condos')
 	approved = models.NullBooleanField( default = None, verbose_name = _('Approved'), choices = APPROVAL_CHOICES )
@@ -138,7 +139,7 @@ class Condo(models.Model):
 	def send_condo_approved_email(self):
 		site= Site.objects.get_current().domain
 		subject = loader.render_to_string('account/email/condo_approved_subject.txt', {})
-		message = loader.render_to_string('account/email/condo_approved_message.txt', {'name' : self.user.first_name, 'site_name': site})
+		message = loader.render_to_string('account/email/condo_approved_message.txt', {'name' : self.user.get_full_name(), 'site_name': site})
 		fromEmail = str(settings.DEFAULT_FROM_EMAIL)
 		emailList = [ self.user.email ]
 		self.user.email_user(subject, message, fromEmail, emailList, fail_silently = False )
