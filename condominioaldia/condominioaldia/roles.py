@@ -3,7 +3,7 @@ from rolepermissions.roles import AbstractUserRole
 
 class Condo(AbstractUserRole):
     available_permissions = {
-        'create_medical_record': True,
+        'create_bank_account': True,
     }
 
 class Resident(AbstractUserRole):

@@ -8,15 +8,31 @@ from django.utils.translation import ugettext_lazy as _
 from django.contrib.auth import get_user_model
 from .models import Condo, Inmueble, Resident
 from rolepermissions.roles import assign_role
+from condo_manager.models import  BankAccount
+
 
 User = get_user_model()
 
+
+
+class BankAccountSerializer(serializers.ModelSerializer):
+	class Meta:
+		fields = ['name', 'account_number','routing_number','currency', 'initial_amount', 'total_amount', 'active']
+		#fields= '_all_'
+		model  = BankAccount
+		# extra_kwargs = {
+		# 	'password': {'write_only': True}
+		# }
+
 class CustomRegisterSerializer(RegisterSerializer):
-	username = None
+	#username = None
 	password1 = serializers.CharField(style={'input_type': 'password'},write_only=True, min_length = 8, allow_blank=False, trim_whitespace=True)
 	password2 = serializers.CharField(style={'input_type': 'password'},write_only=True, min_length = 8, allow_blank=False, trim_whitespace=True)
 	id_number = serializers.CharField()
 	id_proof = serializers.ImageField(required= True)
+
+	# def validate_username(self, username):
+	# 	return None
 
 	def validate_id_proof(self, id_proof):
 		content_type= id_proof.content_type.split('/')[1]
@@ -31,9 +47,13 @@ class CustomRegisterSerializer(RegisterSerializer):
 	def save(self, request):
 		adapter = get_adapter()
 		user = adapter.new_user(request)
+		print(1)
 		user.id_number = self.validated_data.get('id_number')
+		print(2)
 		user.save()
+		print(3)
 		self.cleaned_data = self.get_cleaned_data()
+		print(4)
 		adapter.save_user(request, user, self)
 		condominio = Condo(user= user, id_proof= self.validated_data.get('id_proof'))
 		condominio.save()

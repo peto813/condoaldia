@@ -17,9 +17,17 @@ from django.db.models import Sum
 
 #from allauth.account.utils import send_email_confirmation
 from django.contrib.sites.shortcuts import get_current_site
+from account_keeping.models import Account
 
 
 
+class BankAccount(Account):
+	condo = models.ForeignKey('Condo', on_delete=models.CASCADE, related_name="bank_accounts", null= False)
+	account_number= models.CharField(max_length=25, null= False, blank= False)
+	routing_number = models.CharField(max_length=25, null= True, blank= True)
+	def __str__(self):
+		return smart_text(self.name )
+		
 class User(AbstractUser):
 	#location = models.CharField(max_length=250, null= True)
 	#rif = models.CharField( max_length = 16, unique = True, blank = False, verbose_name = _('Fiscal number') )
@@ -115,13 +123,20 @@ class Condo(models.Model):
 	terms_accepted = models.BooleanField(null = True, default = False, verbose_name = _('Terms'))
 	active  = models.BooleanField(default = True, help_text =_("Condominiums will be deactivated when percentage falls below %s" %(settings.MINIMA_ALICUOTA)))
 	#razon_rechazo = models.CharField(max_length=1000, blank = True, null = True, default = "", verbose_name = _('Rejection cause'))
-    
+
 	def get_share_sum(self):
 		total = self.inmuebles.all().aggregate(share= Sum('share'))['share'] or decimal.Decimal(0)
 		return total
 
+	def get_bank_accounts(self):
+		pass
+
+	def create_bank_account(self, data):
+		bank_account= BankAccount.objects.create(condo=self,**data)
+		self.bank_accounts.add( bank_account)
+		
+
 	def approve(self):
-		#need to set approval date
 		self.approval_date = timezone.now()
 		self.save()
 		self.send_condo_approved_email()
@@ -129,11 +144,6 @@ class Condo(models.Model):
 	def bill_property(self):
 		pass
 
-	# def add_property(self, inmueble):
-	# 	self.inmuebles.add(inmueble)
-
-	# def remove_property(self, inmueble):
-	# 	self.inmuebles.remove(inmueble)
 
 	def send_condo_approved_email(self):
 		site= Site.objects.get_current().domain

@@ -1,6 +1,6 @@
 import os
 from django.contrib import admin
-from condo_manager.models import User, Condo, Resident, Inmueble
+from condo_manager.models import User, Condo, Resident, Inmueble, BankAccount
 from condo_manager.forms import CondoForm 
 from django.contrib.auth.models import Group
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
@@ -26,6 +26,25 @@ class UserAdmin(BaseUserAdmin):
         return 'not found'
     get_role.short_description = _("role")
     list_display = ('id','username','email', 'first_name','last_name','mobile', 'get_role',)
+
+@admin.register(BankAccount)
+class BankAccountAdmin(admin.ModelAdmin):
+    # readonly_fields = ('get_role',)
+    # def get_role(self, user):
+    #     roles = get_user_roles(user)
+    #     role_names = [item.get_name() for item in roles]
+    #     if 'condo' in role_names:
+    #         return 'condo'
+    #     elif 'resident' in role_names:
+    #         return 'resident'            
+    #     elif user.is_staff:
+    #         return 'staff'
+    #     elif user.is_superuser:
+    #         return 'superuser'
+            
+    #     return 'not found'
+    # get_role.short_description = _("role")
+    list_display = ('id','name','account_number', 'condo', )
 
 
 @admin.register(Condo)
