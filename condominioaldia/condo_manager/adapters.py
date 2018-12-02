@@ -25,4 +25,5 @@ class CustomAccountAdapter(DefaultAccountAdapter):
 				email_template = 'account/email/resident_email_confirmation_signup'
 		else:
 			email_template = 'account/email/email_confirmation'
+		#print(email_template)
 		self.send_mail(email_template,emailconfirmation.email_address.email,ctx)

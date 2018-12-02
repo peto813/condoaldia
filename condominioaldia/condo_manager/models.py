@@ -17,8 +17,9 @@ from django.db.models import Sum
 
 #from allauth.account.utils import send_email_confirmation
 from django.contrib.sites.shortcuts import get_current_site
-
-
+from condo_manager.managers import UserManager, InmuebleManager
+from rolepermissions.checkers import has_permission, has_role
+from condominioaldia.roles import Condo as CondoRole, Resident as ResidentRole, Rentee as RenteeRole
 
 class User(AbstractUser):
 	#location = models.CharField(max_length=250, null= True)
@@ -31,10 +32,22 @@ class User(AbstractUser):
 	city = models.CharField( max_length = 40, null = True, default = '', blank = False, verbose_name = _('municipality') )
 	address = models.CharField( max_length = 200, null = True, verbose_name = _('address') )
 	country =  CountryField(null= False, blank = True)
-
+	#objects = UserManager()
 	class Meta:
 		verbose_name = _('user')
 		verbose_name_plural = _('users')
+
+	@property
+	def is_condo(self):
+		return has_role(self, [CondoRole])
+
+	@property
+	def is_resident(self):
+		return has_role(self, [ResidentRole])
+
+	@property
+	def is_rentee(self):
+		return has_role(self, [RenteeRole])
 
 	def get_full_name(self):
 		'''
@@ -61,9 +74,6 @@ class User(AbstractUser):
 	def role(self):
 		return get_user_roles(self)
 
-
-
-
 class Resident(models.Model):
 	user= models.OneToOneField(User, on_delete = models.CASCADE)
 
@@ -76,7 +86,6 @@ class Resident(models.Model):
 		fromEmail = str(settings.DEFAULT_FROM_EMAIL)
 		emailList = [ self.user.email ]
 		self.user.email_user(subject, message, fromEmail, emailList, fail_silently = False )
-
 
 	def id_generator(self, size=6, chars=(string.ascii_uppercase + string.digits)):
 		return ''.join(random.choice(chars) for _ in range(size))
@@ -155,7 +164,7 @@ class Inmueble(models.Model):
 	board_member = models.BooleanField( default = False, verbose_name = _('board member') )
 	owned_since = models.DateTimeField(default = None, null= True )
 	created = models.DateTimeField(auto_now_add=True, null=True, verbose_name = _('Created'))
-
+	#user_objects = InmuebleManager()
 	def clean(self):
 		share_sum = self.condo.get_share_sum()
 		if share_sum + self.share>1:
@@ -188,8 +197,10 @@ class Inmueble(models.Model):
 	def register_payment(self):
 		pass
 
- #    class Meta:
- #        ordering = ['alicuota']
+	class Meta:
+		ordering = ['share']
+		verbose_name =_('Property')
+		verbose_name_plural = _('Properties')
 
  #    @property
  #    def is_orphan(self):#TELLS IF INMUEBLE HAS OWNDER ATTACHED TO IT OR NOT

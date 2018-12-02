@@ -5,26 +5,6 @@ from .models import User, Condo, Inmueble, Resident
 from django.db.models.signals import post_delete, pre_delete, post_save, pre_save
 from rolepermissions.roles import assign_role
 from allauth.account.utils import send_email_confirmation
-# def send_condo_approve(condo):
-
-# 	if condo.user.aprobado: # IF 'APROBADO' FIELD IS CHANGED TO APPROVED STATE
-# 		site= Site.objects.get_current().domain
-# 	    subject = loader.render_to_string('account/email/condo_approved_subject.txt', {})
-# 	    message = loader.render_to_string('account/email/condo_approved_message.txt', {'name' : condo.user.first_name, 'site_name': site})
-# 	    fromEmail = str(settings.DEFAULT_FROM_EMAIL)
-# 	    emailList = [ condo.user.email ]
-# 	    send_email.delay(subject, message, fromEmail, emailList, fail_silently = False )
-# 	    condo.fecha_aprobacion = timezone.now()
-# 	    obj.save()
-# 	elif  not obj.aprobado:
-# 	    razon_rechazo =  request.POST.get('razon_rechazo')
-# 	    obj.razon_rechazo = str(razon_rechazo)
-# 	    subject = _('Oops your condominium was not approved')
-# 	    message = _('Dear '+obj.nombre+', we regret to inform you that your condominium was not approved. The reason is: '+ obj.razon_rechazo +'. You may try to register again!')
-# 	    fromEmail = str(settings.DEFAULT_FROM_EMAIL)
-# 	    emailList = [ condo.user.email ]     
-# 	    send_email.delay(subject, message, fromEmail, emailList, fail_silently = False )
-# 	    condo.user.delete()
 
 @receiver(post_save, sender = Resident)
 def post_resident_save(sender, instance, created,**kwargs):
@@ -68,6 +48,8 @@ def post_condo_save(sender, instance, created,**kwargs):
 	#NEED TO SET THE APPROVED DATE
 	if not created and instance.approved==True and instance.previous_val==None:
 		instance.approve()
+	elif created:
+		assign_role(instance.user, 'condo')
 
 @receiver(pre_save, sender=Inmueble)
 def pre_inmueble_save(sender, instance,**kwargs):

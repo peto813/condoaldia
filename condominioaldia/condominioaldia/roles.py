@@ -12,7 +12,7 @@ class Resident(AbstractUserRole):
     }
 
 
-class Renter(AbstractUserRole):
+class Rentee(AbstractUserRole):
     available_permissions = {
         'edit_patient_file': True,
     }

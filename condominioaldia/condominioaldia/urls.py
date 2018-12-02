@@ -9,7 +9,7 @@ handler400, handler403, handler404, handler500
 )
 
 urlpatterns = [
-    #path('admin/', admin.site.urls),
+    path('admin/', admin.site.urls),
     #path('api-auth/', include('rest_framework.urls')),
     #path('accounts/', include('allauth.urls')),
     path('condos/', include('condo_manager.urls')),

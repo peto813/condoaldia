@@ -44,7 +44,7 @@ class CondoViewSet( RetrieveViewSet ):
 	queryset= Condo.objects.all()
 	serializer_class = CondoSerializer
 	lookup_field = 'condo_id'
-
+	permission_classes=(IsAuthenticated,)
 	def retrieve(self, request, condo_id=None):
 		condo = get_object_or_404(self.queryset, pk=condo_id)
 		serializer = self.get_serializer(condo)
@@ -53,20 +53,30 @@ class CondoViewSet( RetrieveViewSet ):
 class UserViewSet(mixins.RetrieveModelMixin,viewsets.GenericViewSet):
     queryset = User.objects.all()
     serializer_class = UserSerializer
-
+    permission_classes=(IsAuthenticated,)
 
 class InmuebleViewSet(CreateListRetrieveViewSet, mixins.UpdateModelMixin):
 	queryset= Inmueble.objects.all()
 	serializer_class= InmuebleSerializer
-	def list(self, request, *args, **kwargs):
-		queryset = self.filter_queryset(self.get_queryset().filter(condo = kwargs.get('condo_id')))
-		page = self.paginate_queryset(queryset)
-		if page is not None:
-			serializer = self.get_serializer(page, many=True)
-			return self.get_paginated_response(serializer.data)
+	permission_classes=(IsAuthenticated,)
 
-		serializer = self.get_serializer(queryset, many=True)
-		return Response(serializer.data)
+	def get_queryset(self):
+		user = self.request.user
+		if user.is_condo:
+			queryset= self.queryset.filter(condo=user.condo)
+		elif user.is_resident:
+			queryset= self.queryset.filter(resident=user.resident)
+		return queryset
+
+	# def list(self, request, *args, **kwargs):
+	# 	queryset = self.filter_queryset(self.get_queryset())
+	# 	page = self.paginate_queryset(queryset)
+	# 	if page is not None:
+	# 		serializer = self.get_serializer(page, many=True)
+	# 		return self.get_paginated_response(serializer.data)
+
+	# 	serializer = self.get_serializer(queryset, many=True)
+	# 	return Response(serializer.data)
 
 class ResidentViewSet(CreateListRetrieveViewSet):
 	queryset = Resident.objects.all()

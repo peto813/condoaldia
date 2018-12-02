@@ -43,7 +43,7 @@ class CustomRegisterSerializer(RegisterSerializer):
 		adapter.save_user(request, user, self)
 		condominio = Condo(user= user, id_proof= self.validated_data.get('id_proof'))
 		condominio.save()
-		assign_role(user, 'condo')
+		#assign_role(user, 'condo')
 		self.custom_signup(request, user)
 		setup_user_email(request, user, [])
 		return user
@@ -102,7 +102,10 @@ class BaseInmuebleSerializer(serializers.ModelSerializer):
 		model  = Inmueble
 
 class InmuebleSerializer(BaseInmuebleSerializer):
-	pass
+	condo = serializers.HyperlinkedIdentityField(view_name= 'condo_manager:condo-detail', lookup_field= 'condo_id')
+	resident = serializers.HyperlinkedIdentityField(view_name= 'condo_manager:resident-detail', lookup_field= 'pk')
+	#rentee = serializers.HyperlinkedIdentityField(view_name= 'condo_manager:resident-detail', lookup_field= 'pk')
+
 
 class ResidentInmuebleSerializer(BaseInmuebleSerializer):
 	class Meta(BaseInmuebleSerializer.Meta):

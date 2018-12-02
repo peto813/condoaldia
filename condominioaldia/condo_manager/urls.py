@@ -7,7 +7,7 @@ from allauth.account.views import ConfirmEmailView
 
 app_name="condo_manager"
 router = DefaultRouter()
-router.register(r'inmuebles', views.InmuebleViewSet)
+router.register(r'properties', views.InmuebleViewSet)
 router.register(r'residents', views.ResidentViewSet)
 router.register(r'user', views.UserViewSet)#user-detail
 router.register(r'condo_admin', views.CondoViewSet)

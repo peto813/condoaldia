@@ -9,6 +9,8 @@ from rest_framework.test import APITestCase, URLPatternsTestCase
 from rest_framework import status
 from django.conf.urls import url, include
 from rest_framework.authtoken.models import Token
+from rolepermissions.checkers import has_permission, has_role
+
 #from PIL import Image
 '''
 NOTES
@@ -24,7 +26,8 @@ class ApiEndPointsTestCase(APITestCase, URLPatternsTestCase):
         condo=Condo.objects.create(user=user, approved=False, terms_accepted= True, active= True, razon_social='Residencias Isla Paraiso')
         resident_user= User.objects.create(username='b', id_number="v6750435", mobile="041467934140", email ="averga@hotmail.com", first_name= "einstein", last_name= "millan")
         resident= Resident.objects.create(user= resident_user)
-
+        inmueble= Inmueble.objects.create(condo= condo, share= 23, initial_balance = 0, balance = 0, name= '1-a')
+    
     urlpatterns = [
         #path('api-auth/', include('rest_framework.urls')),
         #path('accounts/', include('allauth.urls')),
@@ -50,13 +53,40 @@ class ApiEndPointsTestCase(APITestCase, URLPatternsTestCase):
         user = User.objects.get(email="12@gmail.com")
         condo = Condo.objects.get(user=user)
         url = reverse('condo_manager:condo-detail', kwargs={'condo_id':condo.pk})
+        self.client.force_authenticate(user=user)
         response=self.client.get(url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
     def test_get_user_details(self):
         user = User.objects.get(email="12@gmail.com")
         url = reverse('condo_manager:user-detail', kwargs={'pk':user.pk})
+        self.client.force_authenticate(user=user)
         response=self.client.get(url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+    def test_list_condo_properties(self):
+        user = User.objects.get(email="12@gmail.com")
+        #resident= Resident.objects.get(user= resident_user)
+        url = reverse('condo_manager:inmueble-list')
+        self.client.force_authenticate(user=user)
+        response=self.client.get(url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+    def test_get_condo_properties(self):
+        user = User.objects.get(email="12@gmail.com")
+        #resident= Resident.objects.get(user= resident_user)
+        url = reverse('condo_manager:inmueble-list')
+        self.client.force_authenticate(user=user)
+        response=self.client.get(url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+    def test_get_property_detail(self):
+        user = User.objects.get(email="12@gmail.com")
+        inmueble= Inmueble.objects.get(id=1)
+        url = reverse('condo_manager:inmueble-detail', kwargs={'pk':inmueble.pk})
+        self.client.force_authenticate(user=user)
+        response=self.client.get(url)
+        print(response.data)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
     def test_get_resident_details(self):
@@ -113,17 +143,16 @@ class InmuebleTestCase(TestCase):
         resident= Resident.objects.create(user= resident_user)
     
     def test_inmueble_owner_change_signal(self):
-        """Condo can get sum of its properties correctly"""
-
         inmueble= Inmueble.objects.get(id=1)
         resident_user= User.objects.get(username='b')
         resident = Resident.objects.get(user=resident_user)
         inmueble.resident= resident
         inmueble.save()
 
-# class ResidentTestCase(TestCase):
-	
-# 	def setUp(self):
-# 		user= User.objects.create(id_number="J8309920", mobile="04140934140", email ="12@gmail.com", first_name= "residencias kiara")
-# 		resident= Resident.objects.create(user= user)
-		
+class ResidentTestCase(TestCase):
+
+    def setUp(self):
+        pass
+
+    def test_send_welcome_email(self):
+        pass
