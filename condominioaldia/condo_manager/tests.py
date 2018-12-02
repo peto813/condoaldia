@@ -66,7 +66,6 @@ class ApiEndPointsTestCase(APITestCase, URLPatternsTestCase):
 
     def test_list_condo_properties(self):
         user = User.objects.get(email="12@gmail.com")
-        #resident= Resident.objects.get(user= resident_user)
         url = reverse('condo_manager:inmueble-list')
         self.client.force_authenticate(user=user)
         response=self.client.get(url)
@@ -88,6 +87,15 @@ class ApiEndPointsTestCase(APITestCase, URLPatternsTestCase):
         response=self.client.get(url)
         print(response.data)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+    # def test_post_property(self):
+    #     user = User.objects.get(email="12@gmail.com")
+    #     inmueble= Inmueble.objects.get(id=1)
+    #     url = reverse('condo_manager:inmueble-detail', kwargs={'pk':inmueble.pk})
+    #     self.client.force_authenticate(user=user)
+    #     response=self.client.get(url)
+    #     print(response.data)
+    #     self.assertEqual(response.status_code, status.HTTP_200_OK)
 
     def test_get_resident_details(self):
         resident_user = User.objects.get(email="averga@hotmail.com")

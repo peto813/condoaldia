@@ -147,6 +147,13 @@ class Condo(models.Model):
 	def __str__(self):
 		return smart_text(self.user.get_full_name() )
 
+
+class Rentee(models.Model):
+	user = models.OneToOneField(User, on_delete = models.CASCADE, null = True, verbose_name = _('user'))
+	since =models.DateTimeField(auto_now_add= True)
+
+
+
 class Inmueble(models.Model):
 	'''
 	Inmueble is Property in spanish
@@ -154,7 +161,7 @@ class Inmueble(models.Model):
 	'''
 	share = models.DecimalField(max_digits=7, decimal_places=4, null = False, blank = False, default = 0, verbose_name = _('percentage representation'))
 	rented = models.BooleanField(default = False, verbose_name = _('leased'))
-	rentee = models.OneToOneField( User, on_delete = models.SET_NULL, null = True, verbose_name = _('Rentee') )
+	rentee = models.ForeignKey( Rentee, on_delete = models.SET_NULL, null = True, verbose_name = _('Rentee') )
 	initial_balance = models.DecimalField(max_digits=50, decimal_places=4, null = False, blank = False, verbose_name = _('initial balance'))
 	board_position = models.CharField( max_length=20, null= True, blank = True, verbose_name = _('board position') )
 	condo = models.ForeignKey(Condo, null = False, on_delete= models.CASCADE, verbose_name = _('Condominium'), related_name='inmuebles')
