@@ -6,7 +6,7 @@ from django.shortcuts import get_object_or_404
 #from rest_framework.views import APIView
 from condo_manager.models import Condo, Inmueble, Resident
 from rest_framework.permissions import IsAuthenticated, AllowAny
-from condo_manager.serializers import  CondoSerializer, InmuebleSerializer, ResidentSerializer
+from condo_manager.serializers import  UserSerializer, CondoSerializer, InmuebleSerializer, ResidentSerializer
 from rest_framework import status
 from rest_framework.views import APIView
 from rest_framework.response import Response
@@ -21,7 +21,9 @@ from allauth.account.utils import complete_signup
 from rest_auth.app_settings import create_token
 from allauth.account import app_settings as allauth_settings
 from rest_framework.generics import ListCreateAPIView, DestroyAPIView
+from django.contrib.auth import get_user_model
 
+User = get_user_model()
 
 class CreateListRetrieveViewSet(mixins.CreateModelMixin,
                                 mixins.ListModelMixin,
@@ -41,12 +43,16 @@ class RetrieveViewSet(mixins.RetrieveModelMixin, viewsets.GenericViewSet):
 class CondoViewSet( RetrieveViewSet ):
 	queryset= Condo.objects.all()
 	serializer_class = CondoSerializer
+	lookup_field = 'condo_id'
 
 	def retrieve(self, request, condo_id=None):
 		condo = get_object_or_404(self.queryset, pk=condo_id)
 		serializer = self.get_serializer(condo)
 		return Response(serializer.data)
 
+class UserViewSet(mixins.RetrieveModelMixin,viewsets.GenericViewSet):
+    queryset = User.objects.all()
+    serializer_class = UserSerializer
 
 
 class InmuebleViewSet(CreateListRetrieveViewSet, mixins.UpdateModelMixin):

@@ -9,13 +9,13 @@ handler400, handler403, handler404, handler500
 )
 
 urlpatterns = [
-    path('admin/', admin.site.urls),
-    path('api-auth/', include('rest_framework.urls')),
-    path('accounts/', include('allauth.urls')),
+    #path('admin/', admin.site.urls),
+    #path('api-auth/', include('rest_framework.urls')),
+    #path('accounts/', include('allauth.urls')),
     path('condos/', include('condo_manager.urls')),
-    path('condos/', include('rest_auth.urls'), name= 'rest_auth'),
-    path('condos/<int:condo_id>/', include('account_keeping.urls')),
-    path('condos/registration/', include('rest_auth.registration.urls')),
+    #path('condos/', include('account_keeping.urls')),
+    #path('condos/registration/', include('rest_auth.registration.urls')),
+    #path('condos/', include('rest_auth.urls')),
 ]
 
 if settings.DEBUG:

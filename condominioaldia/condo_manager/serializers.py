@@ -9,6 +9,7 @@ from django.contrib.auth import get_user_model
 from .models import Condo, Inmueble, Resident
 from rolepermissions.roles import assign_role
 from django_countries.serializer_fields import CountryField
+from django_countries.serializers import CountryFieldMixin
 
 User = get_user_model()
 
@@ -47,18 +48,49 @@ class CustomRegisterSerializer(RegisterSerializer):
 		setup_user_email(request, user, [])
 		return user
 
-class BaseUserSerializer(serializers.HyperlinkedModelSerializer):
+# class CustomUserDetailsSerializer(serializers.Serializer):
+# 	email = serializers.EmailField(read_only= True)
+# 	first_name =serializers.CharField()
+# 	last_name =serializers.CharField()
+
+class UserSerializer(CountryFieldMixin, serializers.ModelSerializer):
+	#condo = serializers.HyperlinkedIdentityField(view_name= 'condo_manager:condo-detail')
+	class Meta:
+		fields = [
+			'first_name',
+			'last_name',
+			'email',
+			'id_number',
+			'date_joined',
+			'last_login',
+			'mobile',
+			'office',
+			'other',
+			'city',
+			'state',
+			'address',
+			'country',
+			'condo'
+		]
+		model  = User
+		# extra_kwargs = {
+		# 	'url': {'view_name': 'condo_manager:user-detail'}
+		# }
+
+
+
+class BaseUserSerializer(serializers.ModelSerializer):
 	country = CountryField()
 	class Meta:
-		fields = ['id', 'country']
-		#fields= '_all_'
+		#exclude =['id']
 		model  = User
 		extra_kwargs = {
 			'password': {'write_only': True},
-			'url': {'view_name': 'rest_framew:user-details-view', 'lookup_field': 'pk'},
+			#'url': {'view_name': 'rest_framew:user-details-view', 'lookup_field': 'pk'},
 		}
 
 class CondoSerializer(serializers.ModelSerializer):
+	user = serializers.HyperlinkedIdentityField(view_name= 'condo_manager:user-detail')
 	class Meta:
 		fields = '__all__'
 		model  = Condo
@@ -67,7 +99,6 @@ class BaseInmuebleSerializer(serializers.ModelSerializer):
 	class Meta:
 		fields = '__all__'
 		read_only_fields=('owned_since',)
-		#exclude = ['owned_since']
 		model  = Inmueble
 
 class InmuebleSerializer(BaseInmuebleSerializer):
@@ -75,18 +106,15 @@ class InmuebleSerializer(BaseInmuebleSerializer):
 
 class ResidentInmuebleSerializer(BaseInmuebleSerializer):
 	class Meta(BaseInmuebleSerializer.Meta):
-		#fields= None
 		read_only_fields= ['board_position', 'board_member']
 
 class ResidentUserSerializer(BaseUserSerializer):
 	class Meta(BaseUserSerializer.Meta):
-	# 	model  = User
 		fields= ['email', 'first_name', 'last_name']
 
 class ResidentSerializer(serializers.ModelSerializer):
 	user = ResidentUserSerializer()
 	inmueble =  serializers.PrimaryKeyRelatedField(queryset=Inmueble.objects.all(), write_only= True)
-	#inmueble=ResidentInmuebleSerializer()
 	class Meta:
 		fields = ['user', 'inmueble']
 		model  = Resident
@@ -95,7 +123,6 @@ class ResidentSerializer(serializers.ModelSerializer):
 		request= self.context.get("request")
 		user_data = vd.pop('user')
 		inmueble = vd.pop('inmueble')
-		#adapter = get_adapter()
 		user, created = User.objects.get_or_create(email = user_data.get('email'))
 		if created:
 			user.first_name= user_data.get('first_name' or None)
@@ -105,44 +132,8 @@ class ResidentSerializer(serializers.ModelSerializer):
 			user.inmueble_instance=inmueble
 			resident = Resident(user= user,**vd)
 			resident.request= request
-			#resident.adapter = adapter
-			#resident.setup_user_email= setup_user_email
 			resident.save()
 			inmueble.resident = resident
 			inmueble.save()
 			return resident
-
 		return user.resident
-
-	# def get_cleaned_data(self):
-	# 	return {
-	# 		'username': self.validated_data.get('username', ''),
-	# 		'password1': self.validated_data.get('password1', ''),
-	# 		'email': self.validated_data.get('email', '')
-	# 	}
-
-	# def custom_signup(self, request, user):
-	# 	vd = self.validated_data
-	# 	user_data = vd.get('user')
-	# 	user.first_name= user_data.get('first_name' or None)
-	# 	user.last_name= user_data.get('last_name' or None)
-	# 	user.email= user_data.get('email' or None)
-	# 	user.save()
-
-	# def save(self, request):
-	# 	vd = self.validated_data
-	# 	adapter = get_adapter()
-	# 	user = adapter.new_user(request)
-	# 	inmueble = vd.get('inmueble')
-
-	# 	self.cleaned_data = self.get_cleaned_data()
-
-	# 	user= adapter.save_user(request, user, self)
-	# 	resident = Resident.objects.create(user= user)
-	# 	inmueble.resident = resident
-	# 	inmueble.save()
-	# 	#resident.save()
-	# 	#assign_role(user, 'condo')
-	# 	self.custom_signup(request, user)
-	# 	#setup_user_email(request, user, [])
-	# 	return user

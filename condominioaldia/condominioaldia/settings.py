@@ -125,12 +125,11 @@ AUTH_PASSWORD_VALIDATORS = [
 
 
 REST_FRAMEWORK = {
-
-    # 'DEFAULT_PARSER_CLASSES': (
-    #     'rest_framework.parsers.JSONParser',
-    #     'rest_framework.parsers.MultiPartParser',
-    #     'rest_framework.parsers.FileUploadParser',
-    #     'rest_framework.parsers.FormParser',
+    'TEST_REQUEST_DEFAULT_FORMAT': 'json',
+    # 'TEST_REQUEST_RENDERER_CLASSES': (
+    #     'rest_framework.renderers.MultiPartRenderer',
+    #     'rest_framework.renderers.JSONRenderer',
+    #     'rest_framework.renderers.TemplateHTMLRenderer'
     # ),
     'DEFAULT_RENDERER_CLASSES': (
         'rest_framework.renderers.JSONRenderer',
@@ -154,8 +153,10 @@ REST_FRAMEWORK = {
 
 
 REST_AUTH_REGISTER_SERIALIZERS = {
-    'REGISTER_SERIALIZER': 'condo_manager.serializers.CustomRegisterSerializer',
-    #'TOKEN_SERIALIZER': 'lbtc_navigator.serializers.CustomTokenSerializer',
+    'REGISTER_SERIALIZER': 'condo_manager.serializers.CustomRegisterSerializer',    #'TOKEN_SERIALIZER': 'lbtc_navigator.serializers.CustomTokenSerializer',
+}
+REST_AUTH_SERIALIZERS ={
+    'USER_DETAILS_SERIALIZER':'condo_manager.serializers.UserSerializer'
 }
 # Internationalization
 # https://docs.djangoproject.com/en/2.1/topics/i18n/

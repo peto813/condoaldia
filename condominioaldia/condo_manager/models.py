@@ -32,11 +32,9 @@ class User(AbstractUser):
 	address = models.CharField( max_length = 200, null = True, verbose_name = _('address') )
 	country =  CountryField(null= False, blank = True)
 
-	#special=models.BooleanField(default= False)
-	# class Meta:
-	# 	verbose_name = _('user')
-	# 	verbose_name_plural = _('users')
-	# 	unique_together = ('email',)
+	class Meta:
+		verbose_name = _('user')
+		verbose_name_plural = _('users')
 
 	def get_full_name(self):
 		'''
@@ -63,7 +61,6 @@ class User(AbstractUser):
 	def role(self):
 		return get_user_roles(self)
 
-#post_delete.connect(post_user_delete, sender = User, dispatch_uid='post_condo_delete')
 
 
 
@@ -71,22 +68,15 @@ class Resident(models.Model):
 	user= models.OneToOneField(User, on_delete = models.CASCADE)
 
 	def send_welcome_email(self, inmueble, request):
-		#current_site= Site.objects.get_current()
 		current_site = get_current_site(request)
 		condo_name= inmueble.condo.user.get_full_name()
 		property_name= inmueble.name
-
 		subject = loader.render_to_string('account/email/resident_welcome_subject.txt', {'condo_name':condo_name})
 		message = loader.render_to_string('account/email/resident_welcome_message.txt', {'current_site': current_site, 'condo_name':condo_name, 'property_name':property_name})
-		
 		fromEmail = str(settings.DEFAULT_FROM_EMAIL)
 		emailList = [ self.user.email ]
-		#send_email_confirmation(request, user, signup=False)
 		self.user.email_user(subject, message, fromEmail, emailList, fail_silently = False )
-		#send_email.delay(subject, message, fromEmail, emailList, fail_silently = False )
-		#self.fecha_aprobacion = timezone.now()
-		#send welcome email to new owner
-		#self.setup_user_email(self.request, self.user, [])
+
 
 	def id_generator(self, size=6, chars=(string.ascii_uppercase + string.digits)):
 		return ''.join(random.choice(chars) for _ in range(size))
