@@ -14,16 +14,18 @@ from django_countries.serializers import CountryFieldMixin
 User = get_user_model()
 
 class CustomRegisterSerializer(RegisterSerializer):
-	#username = None
 	password1 = serializers.CharField(style={'input_type': 'password'},write_only=True, min_length = 8, allow_blank=False, trim_whitespace=True)
 	password2 = serializers.CharField(style={'input_type': 'password'},write_only=True, min_length = 8, allow_blank=False, trim_whitespace=True)
 	id_number = serializers.CharField()
 	id_proof = serializers.ImageField(required= True)
 	terms = serializers.BooleanField(required= True)
+	name = serializers.CharField()
+	
 	def validate_terms(self, terms):
 		if not terms:
 			raise serializers.ValidationError(_('You must accepd terms and conditions.'))
 		return terms
+
 	def validate_id_proof(self, id_proof):
 		content_type= id_proof.content_type.split('/')[1]
 		if content_type not in settings.IMAGE_TYPES:
@@ -41,20 +43,16 @@ class CustomRegisterSerializer(RegisterSerializer):
 		user.save()
 		self.cleaned_data = self.get_cleaned_data()
 		adapter.save_user(request, user, self)
-		condominio = Condo(user= user, id_proof= self.validated_data.get('id_proof'))
+		vd =self.validated_data
+		condominio = Condo(user= user,terms_accepted=vd.get('terms'), name= vd.get('name'), id_proof= vd.get('id_proof'))
 		condominio.save()
-		#assign_role(user, 'condo')
 		self.custom_signup(request, user)
 		setup_user_email(request, user, [])
 		return user
 
-# class CustomUserDetailsSerializer(serializers.Serializer):
-# 	email = serializers.EmailField(read_only= True)
-# 	first_name =serializers.CharField()
-# 	last_name =serializers.CharField()
 
-class UserSerializer(CountryFieldMixin, serializers.ModelSerializer):
-	#condo = serializers.HyperlinkedIdentityField(view_name= 'condo_manager:condo-detail')
+class UserSerializer(serializers.ModelSerializer):
+	condo = serializers.HyperlinkedIdentityField(view_name= 'condo_manager:condo-detail')
 	class Meta:
 		fields = [
 			'first_name',
@@ -66,34 +64,25 @@ class UserSerializer(CountryFieldMixin, serializers.ModelSerializer):
 			'mobile',
 			'office',
 			'other',
-			'city',
-			'state',
-			'address',
-			'country',
 			'condo'
 		]
 		model  = User
-		# extra_kwargs = {
-		# 	'url': {'view_name': 'condo_manager:user-detail'}
-		# }
-
-
+		read_only_fields= ['last_login','date_joined']
 
 class BaseUserSerializer(serializers.ModelSerializer):
-	country = CountryField()
+	country = CountryField(country_dict=True)
 	class Meta:
-		#exclude =['id']
 		model  = User
 		extra_kwargs = {
 			'password': {'write_only': True},
-			#'url': {'view_name': 'rest_framew:user-details-view', 'lookup_field': 'pk'},
 		}
 
-class CondoSerializer(serializers.ModelSerializer):
+class CondoSerializer(CountryFieldMixin, serializers.ModelSerializer):
 	user = serializers.HyperlinkedIdentityField(view_name= 'condo_manager:user-detail')
 	class Meta:
-		fields = '__all__'
+		exclude = ['terms_accepted']
 		model  = Condo
+		read_only_fields=('active','approved', 'id','approval_date',)
 
 class BaseInmuebleSerializer(serializers.ModelSerializer):
 	class Meta:
@@ -102,9 +91,16 @@ class BaseInmuebleSerializer(serializers.ModelSerializer):
 		model  = Inmueble
 
 class InmuebleSerializer(BaseInmuebleSerializer):
-	condo = serializers.HyperlinkedIdentityField(view_name= 'condo_manager:condo-detail', lookup_field= 'condo_id')
+	condo = serializers.HyperlinkedIdentityField(view_name= 'condo_manager:condo-detail', lookup_field= 'pk')
 	resident = serializers.HyperlinkedIdentityField(view_name= 'condo_manager:resident-detail', lookup_field= 'pk')
-	#rentee = serializers.HyperlinkedIdentityField(view_name= 'condo_manager:resident-detail', lookup_field= 'pk')
+	#renteegit = serializers.HyperlinkedIdentityField(view_name= 'condo_manager:resident-detail', lookup_field= 'pk')
+	
+	def validate(self, validated_data):
+		request= self.context.get('request')
+		validated_data['condo'] = request.user.condo
+		instance = Inmueble(**validated_data)
+		instance.clean()
+		return validated_data
 
 
 class ResidentInmuebleSerializer(BaseInmuebleSerializer):

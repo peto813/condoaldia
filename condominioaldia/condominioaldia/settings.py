@@ -201,6 +201,7 @@ IMAGE_TYPES=  ('png','jpg','jpeg',)
 
 #EMAIL
 EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+
 DEFAULT_FROM_EMAIL ='peto813@gmail.com'
 
 STATICFILES_DIRS = (

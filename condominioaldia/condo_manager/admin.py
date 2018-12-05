@@ -28,7 +28,7 @@ class UserAdmin(BaseUserAdmin):
     		
         return 'not found'
     get_role.short_description = _("role")
-    list_display = ('id','username','email', 'first_name','last_name','mobile', 'get_role','country',)
+    list_display = ('id','username','email', 'first_name','last_name','mobile', 'get_role',)
 
 @admin.register(Condo)
 class CondoAdmin(admin.ModelAdmin):
@@ -38,7 +38,7 @@ class CondoAdmin(admin.ModelAdmin):
     form = CondoForm
 
     def name(self, condo):
-    	return condo.user.get_full_name()
+    	return condo.user.full_name
 
     def id_number(self, condo):
     	return condo.user.id_number
@@ -56,4 +56,4 @@ class ResidentAdmin(admin.ModelAdmin):
     readonly_fields = ('name',)
 
     def name(self, resident):
-        return resident.user.get_full_name()
+        return resident.user.full_name

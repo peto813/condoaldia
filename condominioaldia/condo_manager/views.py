@@ -1,12 +1,8 @@
 from django.shortcuts import render
 from rest_framework import mixins, viewsets
 from django.shortcuts import get_object_or_404
-#from rest_framework.mixins import ListModelMixin, CreateModelMixin, RetrieveModelMixin, UpdateModelMixin, DestroyModelMixin
-# Create your views here.
-#from rest_framework.views import APIView
 from condo_manager.models import Condo, Inmueble, Resident
 from rest_framework.permissions import IsAuthenticated, AllowAny
-from condo_manager.serializers import  UserSerializer, CondoSerializer, InmuebleSerializer, ResidentSerializer
 from rest_framework import status
 from rest_framework.views import APIView
 from rest_framework.response import Response
@@ -22,6 +18,8 @@ from rest_auth.app_settings import create_token
 from allauth.account import app_settings as allauth_settings
 from rest_framework.generics import ListCreateAPIView, DestroyAPIView
 from django.contrib.auth import get_user_model
+from condo_manager.serializers import  UserSerializer, CondoSerializer, InmuebleSerializer, ResidentSerializer
+from condo_manager.permissions import *
 
 User = get_user_model()
 
@@ -40,25 +38,20 @@ class CreateListRetrieveViewSet(mixins.CreateModelMixin,
 class RetrieveViewSet(mixins.RetrieveModelMixin, viewsets.GenericViewSet):
 	pass
 
-class CondoViewSet( RetrieveViewSet ):
+class CondoViewSet(  mixins.UpdateModelMixin, RetrieveViewSet):
 	queryset= Condo.objects.all()
 	serializer_class = CondoSerializer
-	lookup_field = 'condo_id'
-	permission_classes=(IsAuthenticated,)
-	def retrieve(self, request, condo_id=None):
-		condo = get_object_or_404(self.queryset, pk=condo_id)
-		serializer = self.get_serializer(condo)
-		return Response(serializer.data)
+	permission_classes=(IsAuthenticated, IsCondoOwnerOrReadOnly,)
 
-class UserViewSet(mixins.RetrieveModelMixin,viewsets.GenericViewSet):
+class UserViewSet(mixins.UpdateModelMixin, RetrieveViewSet):
     queryset = User.objects.all()
     serializer_class = UserSerializer
-    permission_classes=(IsAuthenticated,)
+    permission_classes=(IsAuthenticated, IsUserOwnerOrReadOnly,)
 
 class InmuebleViewSet(CreateListRetrieveViewSet, mixins.UpdateModelMixin):
 	queryset= Inmueble.objects.all()
 	serializer_class= InmuebleSerializer
-	permission_classes=(IsAuthenticated,)
+	permission_classes=(IsAuthenticated, IsCondoAdminorReadOnly,)
 
 	def get_queryset(self):
 		user = self.request.user
@@ -68,6 +61,8 @@ class InmuebleViewSet(CreateListRetrieveViewSet, mixins.UpdateModelMixin):
 			queryset= self.queryset.filter(resident=user.resident)
 		return queryset
 
+	def perform_create(self, serializer):
+		instance = serializer.save(condo=self.request.user.condo)
 	# def list(self, request, *args, **kwargs):
 	# 	queryset = self.filter_queryset(self.get_queryset())
 	# 	page = self.paginate_queryset(queryset)
@@ -81,24 +76,7 @@ class InmuebleViewSet(CreateListRetrieveViewSet, mixins.UpdateModelMixin):
 class ResidentViewSet(CreateListRetrieveViewSet):
 	queryset = Resident.objects.all()
 	serializer_class = ResidentSerializer
-	permission_classes=(IsAuthenticated,)
-
-	# def perform_create(self, serializer):
-	# 	user = serializer.save(self.request)
-	# 	#user = resident.user
-	# 	if getattr(settings, 'REST_USE_JWT', False):
-	# 		self.token = jwt_encode(user)
-	# 	else:
-	# 		create_token(self.token_model, user, serializer)
-	# 	complete_signup(self.request._request, user,allauth_settings.EMAIL_VERIFICATION,None)
-	# 	return user
-
-	# def create(self, request, condo_id=None,*args, **kwargs):
-	# 	serializer = self.get_serializer(data=request.data)
-	# 	serializer.is_valid(raise_exception=True)
-	# 	user = self.perform_create(serializer)
-	# 	headers = self.get_success_headers(serializer.data)
-	# 	return Response(self.get_response_data(user),status=status.HTTP_201_CREATED,headers=headers)
+	permission_classes=(IsAuthenticated, IsResidentAdminOrReadOnly,)
 
 class CustomConfirmEmailView(ConfirmEmailView):
 	template_name = "account/email_confirm." + app_settings.TEMPLATE_EXTENSION

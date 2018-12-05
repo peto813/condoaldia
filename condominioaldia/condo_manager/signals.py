@@ -66,5 +66,5 @@ def post_inmueble_save(sender, instance, created,**kwargs):
 	in special cases the instance will be passed with a request attribute Eg;instance.resident by the
 	serializer. Should be accounte for in the tests
 	'''
-	if hasattr(instance, 'resident_has_changed') and instance.resident_has_changed and hasattr(instance.resident, 'request'):
-		instance.resident.send_welcome_email(instance, instance.resident.request)
+	if hasattr(instance, 'resident_has_changed') and instance.resident_has_changed:
+		instance.resident.send_welcome_email(instance)

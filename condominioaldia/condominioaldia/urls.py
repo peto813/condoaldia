@@ -14,7 +14,7 @@ urlpatterns = [
     #path('accounts/', include('allauth.urls')),
     path('condos/', include('condo_manager.urls')),
     #path('condos/', include('account_keeping.urls')),
-    #path('condos/registration/', include('rest_auth.registration.urls')),
+    path('condos/registration/', include('rest_auth.registration.urls')),
     #path('condos/', include('rest_auth.urls')),
 ]
 

@@ -1,14 +1,51 @@
 from rest_framework import permissions
-from rolepermissions.checkers import has_permission, has_role
-from rolepermissions.permissions import available_perm_status
-from condominioaldia.roles import Condo
+from condo_manager.models import Inmueble
 
 
-class CondoOnly(permissions.BasePermission):
-	def has_permission(self, request, view):
-		return has_role(request.user, [Condo])
+class IsCondoOwnerOrReadOnly(permissions.BasePermission):
 
 	def has_object_permission(self, request, view, obj):
-		return has_role(request.user, [Condo])
+		if request.user.is_condo:
+			if request.user.condo == obj:
+				return True
+		elif request.user.is_resident:
+			return Inmueble.objects.filter(condo= obj, resident = request.user.resident).exists() and request.method in permissions.SAFE_METHODS
+		return False
+
+class IsUserOwnerOrReadOnly(permissions.BasePermission):
+
+    def has_object_permission(self, request, view, obj):
+        if obj == request.user or request.user.is_staff or request.user.is_superuser:
+        	return True
+        return False
+
+class IsResidentAdminOrReadOnly(permissions.BasePermission):
+
+	def has_permission(self, request, view):
+		if request.user.is_condo:
+			return True
+		else:
+			return request.method in permissions.SAFE_METHODS
+
+	'''Used to set permissions in ResidentViewset endpoint'''
+	def has_object_permission(self, request, view, obj):
+		if request.user.is_resident and request.method in permissions.SAFE_METHODS and \
+			obj==request.user.resident:
+			return True
+		elif request.user.is_condo:
+			return Inmueble.objects.filter(condo= request.user.condo, resident = obj).exists() and request.method in permissions.SAFE_METHODS
+		return False
 
 
+class IsCondoAdminorReadOnly(permissions.BasePermission):
+	'''Used to set permissions in InmuebleViewset endpoint'''
+	def has_permission(self, request, view):
+		if request.user.is_condo:
+			return True
+		# return request.method in permissions.SAFE_METHODS and \
+		# 	Inmueble.objects.filter(condo= request.user.condo, resident = obj).exists()
+
+	def has_object_permission(self, request, view, obj):
+		if request.user.is_condo and request.user.condo == obj:
+			return True
+		return request.method in permissions.SAFE_METHODS

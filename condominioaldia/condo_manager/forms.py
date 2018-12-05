@@ -21,7 +21,7 @@ class CondoForm(forms.ModelForm):
 		if not kwargs.get('initial'):
 			kwargs['initial'] = {}
 		if instance:
-			kwargs['initial'].update({'name': instance.razon_social})
+			kwargs['initial'].update({'name': instance.name})
 			kwargs['initial'].update({'id_number': instance.user.id_number})
 			kwargs['initial'].update({'address': instance.user.address})
 			kwargs['initial'].update({'country': instance.user.country})
@@ -64,7 +64,7 @@ class CondoForm(forms.ModelForm):
 		condo.user.mobile=  data.get('mobile')
 		condo.user.office=  data.get('office')
 		condo.user.other=  data.get('other')
-		condo.razon_social	= name
+		condo.name	= name
 		condo.user.save()
 		if commit:
 		    condo.save()
