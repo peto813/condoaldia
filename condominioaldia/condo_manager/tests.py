@@ -22,7 +22,7 @@ class ApiEndPointsTestCase(APITestCase, URLPatternsTestCase):
         resident_user= User.objects.create(username='b', id_number="v6750435", mobile="041467934140", email ="averga@hotmail.com", first_name= "einstein", last_name= "millan")
         resident= Resident.objects.create(user= resident_user)
         inmueble= Inmueble.objects.create(condo= condo, share= 0.5, initial_balance = 0,  name= '1-a')
-        condo.inmuebles.add(inmueble)
+        #condo.inmuebles.add(inmueble)
 
     urlpatterns = [
         #path('api-auth/', include('rest_framework.urls')),
@@ -81,6 +81,7 @@ class ApiEndPointsTestCase(APITestCase, URLPatternsTestCase):
     #properties(inmuebles)
 
     def test_list_condo_properties(self):
+        '''Condo can list its properties'''
         user = User.objects.get(email="12@gmail.com")
         url = reverse('condo_manager:inmueble-list')
         self.client.force_authenticate(user=user)
@@ -98,7 +99,7 @@ class ApiEndPointsTestCase(APITestCase, URLPatternsTestCase):
 
 
     def test_post_property(self):
-        '''Condo can create properties given adequate post parameters'''
+        '''Condo can create properties'''
         property1 = {
             'share': decimal.Decimal(0.09),
             'initial_balance': decimal.Decimal(2),
@@ -293,26 +294,25 @@ class PermissionTestCase(APITestCase, URLPatternsTestCase):
         #path('condos/', include('rest_auth.urls')),
     ]
     def setUp(self):
-        condo_user= User.objects.create(username='a', id_number="J8309921", mobile="04140934140", email ="colio@gmail.com", first_name= "residencias kiara")
-        condo=Condo.objects.create(user=condo_user, approved=True, terms_accepted= True, active= True)
-        condo_user2= User.objects.create(username='b', id_number="J830992a", mobile="04140934140", email ="colio@gmasil.com", first_name= "residencias kiasra 2")
+        condo_user1= User.objects.create(username='condo_user1', id_number="J8309921", mobile="04140934140", email ="colio@gmail.com", first_name= "residencias kiara")
+        condo1=Condo.objects.create(user=condo_user1, approved=True, terms_accepted= True, active= True)
+        condo_user2= User.objects.create(username='condo_user2', id_number="J830992a", mobile="04140934140", email ="colio@gmasil.com", first_name= "residencias kiasra 2")
         condo2 = Condo.objects.create(user=condo_user2, approved=True, terms_accepted= True, active= True)    
-        inmueble= Inmueble.objects.create(condo= condo, share= 0.5, initial_balance = 0, name= '1-a')
         resident_user= User.objects.create(username='c', id_number="v6750435", mobile="041467934140", email ="averga@hotmail.com", first_name= "einstein", last_name= "millan")
         resident= Resident.objects.create(user= resident_user)
         resident_user2= User.objects.create(username='d', id_number="v67504351", mobile="041467934140", email ="avergssa@hotmail.com", first_name= "a", last_name= "b")
         resident2= Resident.objects.create(user= resident_user2)      
-        condo.inmuebles.add(inmueble)
-        inmueble.resident =resident
-        inmueble.save()
-
-
+        #condo1.inmuebles.add(inmueble)
+        inmueble= Inmueble.objects.create(condo= condo1, share= 0.5, initial_balance = 0, name= '1-a', resident= resident)
+        inmueble2= Inmueble.objects.create(condo= condo1, share= 0.1, initial_balance = 0, name= '1-b')
+        condo1.inmuebles.add(inmueble)
+        condo1.inmuebles.add(inmueble2)
     #CONDO VIEW PERMISSIONS
     def test_condo_can_not_access_other_condos(self):
         '''Condo cant access other condos'''
-        condo_user1= User.objects.get(username='a')
+        condo_user1= User.objects.get(username='condo_user1')
         condo1 = Condo.objects.get(user = condo_user1)
-        condo_user2= User.objects.get(username='b')
+        condo_user2= User.objects.get(username='condo_user2')
         url = reverse('condo_manager:condo-detail', kwargs={'pk':condo1.pk})
         self.client.force_authenticate(user=condo_user2)
         response=self.client.get(url)
@@ -320,7 +320,7 @@ class PermissionTestCase(APITestCase, URLPatternsTestCase):
 
     def test_condo_can_see_itself(self):
         '''Condo can access itself'''
-        condo_user1= User.objects.get(username='a')
+        condo_user1= User.objects.get(username='condo_user1')
         condo1 = Condo.objects.get(user = condo_user1)
         url = reverse('condo_manager:condo-detail', kwargs={'pk':condo1.pk})
         self.client.force_authenticate(user=condo_user1)
@@ -329,7 +329,7 @@ class PermissionTestCase(APITestCase, URLPatternsTestCase):
 
     def test_condo_can_not_see_other_condo_residents(self):
         '''Condo cant access other condos residents'''
-        condo_user2= User.objects.get(username='b')
+        condo_user2= User.objects.get(username='condo_user2')
         self.client.force_authenticate(user=condo_user2)
         resident_user= User.objects.get(username='c')
         resident= Resident.objects.get(user= resident_user)
@@ -339,7 +339,7 @@ class PermissionTestCase(APITestCase, URLPatternsTestCase):
 
     def test_condo_can_see_its_residents(self):
         '''Condo can access its residents'''
-        condo_user1= User.objects.get(username='a')
+        condo_user1= User.objects.get(username='condo_user1')
         self.client.force_authenticate(user=condo_user1)
         resident_user= User.objects.get(username='c')
         resident= Resident.objects.get(user= resident_user)
@@ -369,7 +369,7 @@ class PermissionTestCase(APITestCase, URLPatternsTestCase):
 
     def test_resident_can_not_view_unrelated_condos(self):
         '''Resident can not access other condos'''
-        condo_user2= User.objects.get(username='b')
+        condo_user2= User.objects.get(username='condo_user2')
         condo2 = Condo.objects.get(user = condo_user2)
         resident_user= User.objects.get(username='c')
         self.client.force_authenticate(user=resident_user)
@@ -379,7 +379,7 @@ class PermissionTestCase(APITestCase, URLPatternsTestCase):
 
     def test_resident_can_view_its_condo(self):
         '''Resident can see its condo'''
-        condo_user1= User.objects.get(username='a')
+        condo_user1= User.objects.get(username='condo_user1')
         condo1 = Condo.objects.get(user = condo_user1)
         resident_user= User.objects.get(username='c')
         self.client.force_authenticate(user=resident_user)
@@ -389,7 +389,7 @@ class PermissionTestCase(APITestCase, URLPatternsTestCase):
 
     def test_resident_can_not_edit_its_condo(self):
         '''Resident can not edit its condo'''
-        condo_user1= User.objects.get(username='a')
+        condo_user1= User.objects.get(username='condo_user1')
         condo1 = Condo.objects.get(user = condo_user1)
         resident_user= User.objects.get(username='c')
         self.client.force_authenticate(user=resident_user)
@@ -409,8 +409,8 @@ class PermissionTestCase(APITestCase, URLPatternsTestCase):
     #USER VIEW PERMISSIONS
     def test_user_can_not_edit_other_users(self):
         '''User can not edit other users'''
-        condo_user1= User.objects.get(username='a')
-        condo_user2= User.objects.get(username='b')
+        condo_user1= User.objects.get(username='condo_user1')
+        condo_user2= User.objects.get(username='condo_user2')
         url = reverse('condo_manager:user-detail', kwargs={'pk':condo_user2.pk})
         self.client.force_authenticate(user=condo_user1)
         response=self.client.patch(url, { 'first_name':'diff name'})
@@ -418,7 +418,7 @@ class PermissionTestCase(APITestCase, URLPatternsTestCase):
 
     def test_user_can_edit_self(self):
         '''User can edit self'''
-        condo_user1= User.objects.get(username='a')
+        condo_user1= User.objects.get(username='condo_user1')
         url = reverse('condo_manager:user-detail', kwargs={'pk':condo_user1.pk})
         self.client.force_authenticate(user=condo_user1)
         response=self.client.patch(url, { 'first_name':'diff name'})
@@ -426,16 +426,52 @@ class PermissionTestCase(APITestCase, URLPatternsTestCase):
 
     #INMUEBLE(PROPERTIES) VIEW PERMISSIONS
 
-    # def test_condo_can_add_edit_delete_its_properties(self):
-    #     '''Condo can not add properties to itself the belong to others'''
-    #     condo_user2= User.objects.get(username='b')
-    #     inmueble= Inmueble.objects.get( name= '1-a')
+    def test_condo_can_add_edit_its_properties(self):
+        '''Condo can not add properties to itself the belong to others'''
+        condo_user1 = User.objects.get(username='condo_user1')
+        first_property = Inmueble.objects.get(name= '1-a')
+        self.client.force_authenticate(user=condo_user1)
+        url = reverse('condo_manager:user-detail', kwargs={'pk':first_property.pk})
+        response=self.client.get(url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        data= {
+            'name':'new name!'
+        }
+        response=self.client.patch(url, data)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
 
-    #     url = reverse('condo_manager:user-detail', kwargs={'pk':condo_user1.pk})
-    #     self.client.force_authenticate(user=condo_user2)
-    #     response=self.client.patch(url, { 'first_name':'diff name'})
-    #     # self.assertEqual(response.status_code, status.HTTP_200_OK)
 
-    # def test_condo_can_not_add_edit_delete_others_properties(self):
-    #     '''Condo can not add  other condos properties to itself'''
-    #     pass
+    def test_condo_can_not_add_edit_delete_others_properties(self):
+        '''Condo does not have access to other condos data resources'''
+        first_property = Inmueble.objects.get(name= '1-a')
+        condo_user2 = User.objects.get(username ='condo_user2')
+        self.client.force_authenticate(user=condo_user2)
+        url = reverse('condo_manager:user-detail', kwargs={'pk':first_property.pk})
+        response=self.client.get(url)
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+    def test_property_cant_be_created_by_resident(self):
+        '''Property can not be created by resident'''
+        resident_user= User.objects.get(username='c')
+        self.client.force_authenticate(user=resident_user)
+        data={}
+        url = reverse('condo_manager:inmueble-list')
+        response=self.client.post(url, data)
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+    def test_own_property_can_be_viewed_by_resident(self):
+        '''Property can be created by resident'''
+        first_property = Inmueble.objects.get(name= '1-a')
+        self.client.force_authenticate(user=first_property.resident.user)
+        url = reverse('condo_manager:inmueble-detail', kwargs={'pk':first_property.pk})
+        response=self.client.get(url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+    def test_others_property_cant_be_viewed_by_resident(self):
+        '''Others property can not be viewed by resident'''
+        first_property = Inmueble.objects.get(name= '1-a')
+        self.client.force_authenticate(user=first_property.resident.user)
+        second_property= Inmueble.objects.get(name='1-b')
+        url = reverse('condo_manager:inmueble-detail', kwargs={'pk':second_property.pk})
+        response=self.client.get(url)
+        self.assertNotEquals(response.status_code, status.HTTP_200_OK)

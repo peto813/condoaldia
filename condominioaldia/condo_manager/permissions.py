@@ -29,23 +29,25 @@ class IsResidentAdminOrReadOnly(permissions.BasePermission):
 
 	'''Used to set permissions in ResidentViewset endpoint'''
 	def has_object_permission(self, request, view, obj):
+
 		if request.user.is_resident and request.method in permissions.SAFE_METHODS and \
 			obj==request.user.resident:
 			return True
 		elif request.user.is_condo:
-			return Inmueble.objects.filter(condo= request.user.condo, resident = obj).exists() and request.method in permissions.SAFE_METHODS
+			return Inmueble.objects.filter(condo= request.user.condo, resident = obj).exists()
 		return False
 
-
-class IsCondoAdminorReadOnly(permissions.BasePermission):
+class IsCondoAdminOrReadOnly(permissions.BasePermission):
 	'''Used to set permissions in InmuebleViewset endpoint'''
 	def has_permission(self, request, view):
 		if request.user.is_condo:
 			return True
-		# return request.method in permissions.SAFE_METHODS and \
-		# 	Inmueble.objects.filter(condo= request.user.condo, resident = obj).exists()
+		elif request.user.is_resident:
+			return request.method in permissions.SAFE_METHODS
+
 
 	def has_object_permission(self, request, view, obj):
-		if request.user.is_condo and request.user.condo == obj:
+		if request.user.is_condo and request.user.condo == obj.condo:
 			return True
-		return request.method in permissions.SAFE_METHODS
+		else:
+			return request.method in permissions.SAFE_METHODS and Inmueble.objects.filter(condo= obj.condo, resident = obj.resident).exists()

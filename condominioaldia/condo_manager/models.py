@@ -21,6 +21,7 @@ from condo_manager.managers import UserManager, InmuebleManager
 from condo_manager.validators import validate_postitive
 from rolepermissions.checkers import has_permission, has_role
 from condominioaldia.roles import Condo as CondoRole, Resident as ResidentRole, Rentee as RenteeRole
+#from account_keeping.models import Transaction
 
 class User(AbstractUser):
 	id_number = models.CharField(max_length=100, verbose_name=_('Fiscal Number'), unique= True)
@@ -204,7 +205,7 @@ class Inmueble(models.Model):
 		'''
 		the balance is the sum of ordinary payments minus unpaid invoices
 		'''
-
+		payments= Transaction.objects.all()
 		# account_balance = self.transactions.filter(
 		# 	parent__isnull=True,
 		# 	transaction_date__lt=next_month,

@@ -51,7 +51,7 @@ class UserViewSet(mixins.UpdateModelMixin, RetrieveViewSet):
 class InmuebleViewSet(CreateListRetrieveViewSet, mixins.UpdateModelMixin):
 	queryset= Inmueble.objects.all()
 	serializer_class= InmuebleSerializer
-	permission_classes=(IsAuthenticated, IsCondoAdminorReadOnly,)
+	permission_classes=(IsAuthenticated, IsCondoAdminOrReadOnly,)
 
 	def get_queryset(self):
 		user = self.request.user
@@ -63,15 +63,6 @@ class InmuebleViewSet(CreateListRetrieveViewSet, mixins.UpdateModelMixin):
 
 	def perform_create(self, serializer):
 		instance = serializer.save(condo=self.request.user.condo)
-	# def list(self, request, *args, **kwargs):
-	# 	queryset = self.filter_queryset(self.get_queryset())
-	# 	page = self.paginate_queryset(queryset)
-	# 	if page is not None:
-	# 		serializer = self.get_serializer(page, many=True)
-	# 		return self.get_paginated_response(serializer.data)
-
-	# 	serializer = self.get_serializer(queryset, many=True)
-	# 	return Response(serializer.data)
 
 class ResidentViewSet(CreateListRetrieveViewSet):
 	queryset = Resident.objects.all()
