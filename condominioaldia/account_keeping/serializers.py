@@ -70,7 +70,7 @@ class TransactionSerializer(serializers.ModelSerializer):
 	#slug= serializers.SlugField(required= False)
 	mark_invoice = serializers.BooleanField(
 		label=_('Mark invoice as paid?'),
-		initial=True,
+		initial=False,
 		required=False
 	)
 	class Meta:

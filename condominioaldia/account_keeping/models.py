@@ -43,6 +43,8 @@ class AmountMixin(object):
         type_ = getattr(self, type_field_name)
         if type_ == Transaction.TRANSACTION_TYPES['withdrawal']:
             multiplier = -1
+        elif type_ == Transaction.TRANSACTION_TYPES['pending']:
+            multiplier = 0
         self.value_net = self.amount_net * multiplier
         self.value_gross = self.amount_gross * multiplier
 
@@ -180,7 +182,8 @@ class Invoice(AmountMixin, models.Model):
         max_digits=14,
         decimal_places=10,
         default=0,
-        verbose_name=_('VAT'),
+        verbose_name=_('Sales tax'),
+        help_text=_("sales tax")
     )
 
     amount_gross = models.DecimalField(
@@ -229,6 +232,9 @@ class Invoice(AmountMixin, models.Model):
             return self.invoice_number
         return '{0} - {1}'.format(self.invoice_date,
                                   self.get_invoice_type_display())
+
+    def notify_client(self):
+        NotImplementedError('Method not implemented')
 
     def save(self, *args, **kwargs):
         self.set_amount_fields()
@@ -368,11 +374,11 @@ class Transaction(AmountMixin, models.Model):
         blank=True,
     )
 
-    invoice_number = models.CharField(
-        verbose_name=_('Invoice No.'),
-        max_length=256,
-        blank=True,
-    )
+    # invoice_number = models.CharField(
+    #     verbose_name=_('Invoice No.'),
+    #     max_length=256,
+    #     blank=True,
+    # )
 
     invoice = models.ForeignKey(
         Invoice,
@@ -398,12 +404,12 @@ class Transaction(AmountMixin, models.Model):
         on_delete = models.PROTECT
     )
 
-    currency = models.ForeignKey(
-        'currency_history.Currency',
-        related_name='transactions',
-        verbose_name=_('Currency'),
-        on_delete = models.PROTECT
-    )
+    # currency = models.ForeignKey(
+    #     'currency_history.Currency',
+    #     related_name='transactions',
+    #     verbose_name=_('Currency'),
+    #     on_delete = models.PROTECT
+    # )
 
     amount_net = models.DecimalField(
         max_digits=18,

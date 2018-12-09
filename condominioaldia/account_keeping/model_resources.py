@@ -17,14 +17,14 @@ class TransactionResource(resources.ModelResource):
     class Meta:
         model = models.Transaction
         fields = ('id', 'transaction_date', 'description', 'invoice_no',
-                  'payee__first_name', 'category__name', 'get_transaction_type',
-                  'currency__iso_code', 'amount_net', 'vat', 'amount_gross',
+                  'payee__first_name', 'category__name', 'get_transaction_type', 
+                  'amount_net', 'vat', 'amount_gross',
                   'balance')
         export_order = fields
 
     def dehydrate_invoice_no(self, transaction):  # pragma: nocover
-        if transaction.invoice_number:
-            return transaction.invoice_number
+        if transaction.invoice.invoice_number:
+            return transaction.invoice.invoice_number
         if transaction.invoice and transaction.invoice.invoice_number:
             return transaction.invoice.invoice_number
         return ''

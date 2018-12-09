@@ -782,7 +782,6 @@ class BankAccountsViewSet(CreateListRetrieveViewSet, mixins.DestroyModelMixin, m
     permission_classes= (IsAuthenticated,  IsCondoOrReadOnly, )
 
     def get_queryset(self):
-        a
         if self.request.user.is_condo:
             return self.queryset.filter(user= self.request.user)
         elif self.request.user.is_resident:
@@ -805,12 +804,25 @@ class TransactionViewSet(CreateListRetrieveViewSet, mixins.DestroyModelMixin, mi
         elif self.request.user.is_resident:
             return self.queryset.filter(account__user__condo__inmuebles__resident=self.request.user.resident, account= self.kwargs.get('account_pk'))
 
+    def retrieve(self, request, pk=None, account_pk=None):
+        transaction = get_object_or_404(self.queryset, pk=pk, account=account_pk)
+        self.check_object_permissions(request, transaction)
+        serializer = self.get_serializer(transaction)
+        return Response(serializer.data)
+
+    def perform_create(self, serializer):
+        account_pk =self.kwargs.get('account_pk')
+        account=models.Account.objects.get(pk = account_pk)
+        serializer.save(account=account )
 
     # def get_condo_or_404(self, condo_id):
     #     condo= get_object_or_404(Condo, pk= condo_id)
     #     return condo
 
     # def perform_create(self, serializer):
+    #     print(self.kwargs.get('account_pk'))
+    #     a
+    #     pass
     #     print(dir(self.request))
     #     print(self.request.data)
     #     if self.request.user.is_condo:
@@ -818,14 +830,8 @@ class TransactionViewSet(CreateListRetrieveViewSet, mixins.DestroyModelMixin, mi
         #     instance = serializer.save(condo=self.request.user.condo)
         #self.request.user.condo.create_bank_account(serializer.validated_data)
 
-    # def create(self, request,*args, **kwargs):
-    #     data= request.data.copy()
-    #     data['account'] =str(request.data['account'])
-    #     serializer = self.get_serializer(data=data)
-    #     if serializer.is_valid():
-    #         pass
-    #     else:
-    #         print(serializer.errors)
+    # def create(self, request, account_pk=None, *args, **kwargs):
+    #     serializer = self.get_serializer(data=request.data)
     #     serializer.is_valid(raise_exception=True)
     #     self.perform_create(serializer)
     #     headers = self.get_success_headers(serializer.data)

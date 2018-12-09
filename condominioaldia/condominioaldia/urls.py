@@ -4,9 +4,14 @@ from django.conf.urls import url, include
 from django.conf import settings
 from django.conf.urls.static import static
 from allauth.account.views import ConfirmEmailView
+from account_keeping.views import InvoiceViewSet
+from rest_framework.routers import DefaultRouter
 from django.conf.urls import (
-handler400, handler403, handler404, handler500
+    handler400, handler403, handler404, handler500
 )
+
+router= DefaultRouter()
+router.register(r'invoices', InvoiceViewSet, basename="invoice")
 
 urlpatterns = [
     path('admin/', admin.site.urls),
@@ -16,6 +21,7 @@ urlpatterns = [
     path('condos/accounts/', include('account_keeping.urls', namespace='account_keeping')),
     path('condos/registration/', include('rest_auth.registration.urls')),
     path('users/', include('rest_auth.urls')),
+    path('condos/',  include(router.urls)),
 ]
 
 if settings.DEBUG:

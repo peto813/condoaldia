@@ -10,14 +10,15 @@ app_name= "account_keeping"
 #router = DefaultRouter()
 router= routers.DefaultRouter()
 router.register(r'', views.BankAccountsViewSet, basename="account"),
-#router.register(r'<int:pk>/transactions', views.TransactionViewSet)
+#router.register(r'invoices', views.InvoiceViewSet, basename="invoice")
 #router.register(r'user', views.UserViewSet)#user-detai
 
 
 
 
-domains_router = routers.NestedDefaultRouter(router, r'', lookup='account')
-domains_router.register(r'transactions', views.TransactionViewSet, base_name='transaction')
+nested_router = routers.NestedDefaultRouter(router, r'', lookup='account')
+nested_router.register(r'transactions', views.TransactionViewSet, base_name='transaction')
+
 # 'base_name' is optional. Needed only if the same viewset is registered more than once
 # Official DRF docs on this option: http://www.django-rest-framework.org/api-guide/routers/
 urlpatterns = [
@@ -28,13 +29,13 @@ urlpatterns = [
 
     path('transaction/create/',views.TransactionCreateView.as_view(),name='account_keeping_transaction_create'),
 
-    url(r'invoice/(?P<pk>\d+)/$',
-        views.InvoiceUpdateView.as_view(),
-        name='account_keeping_invoice_update'),
+    # url(r'invoice/(?P<pk>\d+)/$',
+    #     views.InvoiceUpdateView.as_view(),
+    #     name='account_keeping_invoice_update'),
 
-    url(r'invoice/create/$',
-        views.InvoiceCreateView.as_view(),
-        name='account_keeping_invoice_create'),
+    # url(r'invoice/create/$',
+    #     views.InvoiceCreateView.as_view(),
+    #     name='account_keeping_invoice_create'),
 
     url(r'accounts/$',
         views.AccountListView.as_view(),
@@ -78,7 +79,7 @@ urlpatterns = [
 
    # path('', views.BankAccountsViewSet.as_view({'get': 'list', 'post':'create'}), name='account_keeping_index'),
     path('', include(router.urls)),
-    path('', include(domains_router.urls)),
+    path('', include(nested_router.urls)),
     # url(r'',
     #     views.IndexView.as_view(),
     #     name='account_keeping_index'),

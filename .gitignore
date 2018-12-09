@@ -89,3 +89,11 @@ local_settings.py
 db.sqlite3
 media_root/
 static_root/
+
+**/migrations/**
+!**/migrations
+!**/migrations/__init__.py
+
+**/south_migrations/**
+!**/south_migrations
+!**/south_migrations/__init__.py
