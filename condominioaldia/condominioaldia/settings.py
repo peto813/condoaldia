@@ -49,9 +49,10 @@ INSTALLED_APPS = [
     'rolepermissions',
     'django_libs',
     'django_countries',
-    'account_keeping',
     'currency_history',
     'import_export',
+    'rest_framework_nested',
+    'account_keeping',
     'condo_manager',
 ]
 

@@ -20,7 +20,7 @@ class CustomRegisterSerializer(RegisterSerializer):
 	id_proof = serializers.ImageField(required= True)
 	terms = serializers.BooleanField(required= True)
 	name = serializers.CharField()
-	
+	username =None
 	def validate_terms(self, terms):
 		if not terms:
 			raise serializers.ValidationError(_('You must accepd terms and conditions.'))

@@ -35,11 +35,15 @@ class User(AbstractUser):
 
 	@property
 	def is_condo(self):
-		return has_role(self, [CondoRole])
+		if hasattr(self, 'condo') and self.condo!=None:
+			return has_role(self, [CondoRole])
+		return False
 
 	@property
 	def is_resident(self):
-		return has_role(self, [ResidentRole])
+		if hasattr(self, 'resident') and self.resident!=None:
+			return has_role(self, [ResidentRole])
+		return False
 
 	@property
 	def is_rentee(self):
@@ -133,7 +137,9 @@ class Condo(models.Model):
 	def create_bank_account(self, data):
 		from account_keeping.models import Account
 		bank_account= Account.objects.create(user=self.user, **data)
-		self.user.bank_accounts.add( bank_account)
+		print(bank_account)
+		#print(bank_account.pk, 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaa')
+		#self.user.bank_accounts.add( bank_account)
 
 	def approve(self):
 		self.approval_date = timezone.now()

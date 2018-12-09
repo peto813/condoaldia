@@ -1,0 +1,30 @@
+{% extends "account_keeping/base.html" %}
+{% load i18n %}
+
+{% block main %}
+<div class="container">
+    <h1>{% trans "Welcome to Django Account Keeping" %}</h1>
+    <p>{% trans "Click at one of the main navigation items to start. Soon we will show the most important current stats on this page." %}</p>
+
+    {% if transactions_without_invoice %}
+        <h2>{% trans "Transactions without invoice" %}</h2>
+        {% include "account_keeping/partials/transactions_table.html" with transactions=transactions_without_invoice %}
+    {% endif %}
+
+    {% if invoices_without_pdf %}
+        <h2>{% trans "Invoices without PDF" %}</h2>
+        {% include "account_keeping/partials/invoices_table.html" with invoices=invoices_without_pdf %}
+    {% endif %}
+
+    {% if unpaid_invoices_with_transactions %}
+        <h2>{% trans "Unpaid invoices in Freckle" %}</h2>
+        {% if unpaid_invoices_with_transactions.error %}
+          <p class="alert alert-danger">{{ unpaid_invoices_with_transactions.error }}</p>
+        {% elif unpaid_invoices_with_transactions.invoices %}
+          {% include "account_keeping/partials/invoices_table.html" with invoices=unpaid_invoices_with_transactions %}
+        {% else %}
+          <p class="alert alert-success">{% trans "Everything is fine :)" %}</p>
+        {% endif %}
+    {% endif %}
+</div>
+{% endblock %}

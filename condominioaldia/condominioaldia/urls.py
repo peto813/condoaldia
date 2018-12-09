@@ -12,10 +12,10 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     #path('api-auth/', include('rest_framework.urls')),
     #path('accounts/', include('allauth.urls')),
-    path('condos/', include('condo_manager.urls')),
-    #path('condos/', include('account_keeping.urls')),
+    path('condos/', include('condo_manager.urls', namespace='condo_manager')),
+    path('condos/accounts/', include('account_keeping.urls', namespace='account_keeping')),
     path('condos/registration/', include('rest_auth.registration.urls')),
-    #path('condos/', include('rest_auth.urls')),
+    path('users/', include('rest_auth.urls')),
 ]
 
 if settings.DEBUG:

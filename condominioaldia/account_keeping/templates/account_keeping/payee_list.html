@@ -1,0 +1,40 @@
+{% extends "account_keeping/base.html" %}
+{% load i18n account_keeping_tags %}
+
+{% block main %}
+  <div class="container">
+    <h1>{% trans "Payees" %}</h1>
+    <table class="table">
+      <tr>
+        <th>{% trans "Payee" %}</th>
+        <th>{% trans "Invoices" %}</th>
+        <th>{% trans "Transactions" %}</th>
+      </tr>
+      {% for payee in object_list %}
+        <tr>
+          <td><a href="{% url "account_keeping:account_keeping_payee_update" pk=payee.pk %}">{{ payee }}</a></td>
+          <td>
+            <a class="btn btn-default" data-toggle="collapse" href="#collapse{{ payee.pk }}" aria-expanded="false" aria-controls="collapse{{ payee.pk }}">{{ payee.invoices.count }}</a>
+            <div style="margin-top: 20px;" class="collapse" id="collapse{{ payee.pk }}">
+              <table class="table">
+                <tbody>
+                  {% for invoice in payee.invoices.all %}
+                    <tr>
+                      <td>
+                        <a href="{% url "account_keeping:account_keeping_invoice_update" pk=invoice.pk %}">{{ invoice }}</a>
+                      </td>
+                      <td>{{ invoice.value_net|currency:invoice.currency }}</td>
+                    </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+          </td>
+          <td>
+            {{ payee.transactions.count }}
+          </td>
+        </tr>
+      {% endfor %}
+    </table>
+  </div>
+{% endblock %}

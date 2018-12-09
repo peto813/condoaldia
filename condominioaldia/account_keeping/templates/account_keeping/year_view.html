@@ -1,0 +1,63 @@
+{% extends "account_keeping/base.html" %}
+{% load account_keeping_tags humanize i18n libs_tags tz %}
+
+{% block main %}
+<div class="container">
+    <h1>
+        {% trans "Year overview" %} ({{ year }})
+        {% if last_year %}<a class="small" href="{% url "account_keeping:account_keeping_year" year=last_year %}"><span class="glyphicon glyphicon-chevron-left"></span></a>{% endif %}
+        {% if next_year %}<a class="small" href="{% url "account_keeping:account_keeping_year" year=next_year %}"><span class="glyphicon glyphicon-chevron-right"></span></a>{% endif %}
+    </h1>
+
+    <table class="table table-hover table-condensed small">
+        <thead>
+            <tr>
+                <th>{% trans "Month" %}</th>
+                <th>{% trans "Income" %}</th>
+                <th>{% trans "Expenses" %}</th>
+                <th>{% trans "Profit" %}</th>
+                <th>{% trans "New invoiced income" %}</th>
+                <th>{% trans "Total outstanding profit" %}</th>
+                <th>{% trans "Bank balance" %}</th>
+                <th>{% trans "Total equity" %}</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for month in months %}
+                <tr>
+                    {% localtime off %}
+                    <td>{{ month|date:"M" }}</td>
+                    {% endlocaltime %}
+                    <td>{% call income_total "get" month as income_total_value %}{{ income_total_value|default:0|currency }}</td>
+                    <td>{% call expenses_total "get" month as expenses_total_value %}{{ expenses_total_value|default:0|currency }}</td>
+                    <td>{% call profit_total "get" month as profit_total_value %}{{ profit_total_value|default:0|currency }}</td>
+                    <td>{% call new_total "get" month as new_total_value %}{{ new_total_value|default:0|currency }}</td>
+                    <td>{% call outstanding_total "get" month as outstanding_total_value %}{{ outstanding_total_value|default:0|currency }}</td>
+                    <td>{% call balance_total "get" month as balance_total_value %}{{ balance_total_value|default:0|currency }}</td>
+                    <td>{% call equity_total "get" month as equity_total_value %}{{ equity_total_value|default:0|currency }}</td>
+                </tr>
+            {% endfor %}
+            <tr>
+                <td><strong>{% trans "Total" %}</strong></td>
+                <td><strong>{{ income_total_total|currency }}</strong></td>
+                <td><strong>{{ expenses_total_total|currency }}</strong></td>
+                <td><strong>{{ profit_total_total|currency }}</strong></td>
+                <td><strong>{{ new_total_total|currency }}</strong></td>
+                <td></td>
+                <td></td>
+                <td></td>
+            </tr>
+            <tr>
+                <td><strong>{% trans "Average" %}</strong></td>
+                <td><strong>{{ income_average|currency }}</strong></td>
+                <td><strong>{{ expenses_average|currency }}</strong></td>
+                <td><strong>{{ profit_average|currency }}</strong></td>
+                <td><strong>{{ new_average|currency }}</strong></td>
+                <td><strong>{{ outstanding_average|currency }}</strong></td>
+                <td><strong>{{ balance_average|currency}}</strong></td>
+                <td><strong>{{ equity_average|currency }}</strong></td>
+            </tr>
+        </tbody>
+    </table>
+</div>
+{% endblock %}
