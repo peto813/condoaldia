@@ -14,7 +14,7 @@ from django.utils.translation import ugettext_lazy as _
 from currency_history.models import Currency, CurrencyRateHistory
 from dateutil import relativedelta
 from django.contrib.auth import get_user_model
-
+from condo_manager.models import Condo
 User = get_user_model()
 
 class AmountMixin(object):
@@ -126,20 +126,22 @@ class InvoiceManager(models.Manager):
 
 @python_2_unicode_compatible
 class Invoice(AmountMixin, models.Model):
+    '''
+    '''
     INVOICE_TYPES = {
         'withdrawal': 'w',
         'deposit': 'd',
-        'ordinary': 'o',
+        'monthly': 'm',
         'extra-ordinary': 'eo'
     }
     INVOICE_TYPE_CHOICES = [
         (INVOICE_TYPES['withdrawal'], 'withdrawal'),
         (INVOICE_TYPES['deposit'], 'deposit'),
-        (INVOICE_TYPES['ordinary'], 'ordinary'),
+        (INVOICE_TYPES['monthly'], 'monthly'),
         (INVOICE_TYPES['extra-ordinary'], 'extra-ordinary')
     ]
-    customer = models.ForeignKey(User, on_delete=models.SET_NULL, null= True)
-
+    customer = models.ForeignKey(User, on_delete=models.PROTECT, null= True)
+    condo = models.ForeignKey(Condo, on_delete =models.PROTECT, null= False, default = None, related_name = 'invoices')
     payed = models.BooleanField(default= False)
 
     invoice_type = models.CharField(

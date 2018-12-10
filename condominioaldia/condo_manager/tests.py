@@ -1,4 +1,4 @@
-import numbers, json, PIL, tempfile, os, decimal
+import numbers, json, PIL, tempfile, os, decimal, arrow
 from django.utils import timezone
 from django.urls import path, re_path
 from django.test import TestCase, Client
@@ -209,6 +209,37 @@ class CondoTestCase(APITestCase):
             'currency': currency
         }
         condo.create_bank_account(data)
+
+    def test_condo_can_get_current_period(self):
+        """Condo can correctly get its current billing period"""
+        keys= ['from', 'to']
+        user = User.objects.get(email="12@gmail.com")
+        condo = Condo.objects.get(user=user)
+        current_period = condo.get_current_billing_period()
+        #no invoices yet to initial period is month joined
+        expected_response= {
+            'from': arrow.get(user.date_joined).floor('month').datetime,
+            'to':arrow.get(user.date_joined).ceil('month').datetime
+        }
+        assert expected_response == current_period
+        assert 'from' and 'to' in current_period
+        #add a monthly invoice and check new expected response
+        currency = Currency.objects.get(iso_code='USD')
+        invoice = condo.invoices.create(
+            invoice_date =expected_response['from'],
+            currency = Currency.objects.get(iso_code='USD'),
+            invoice_type= 'm'
+        )
+        current_period = condo.get_current_billing_period()
+        latest_monthly_invoice = condo.invoices.all().latest('invoice_date')
+        next_monthly_invoice_date=arrow.get(latest_monthly_invoice.invoice_date).ceil('month').replace(seconds=+1)
+        expected_response2= {
+            'from' :next_monthly_invoice_date.floor('month').datetime,
+            'to':next_monthly_invoice_date.ceil('month').datetime
+        }
+        assert expected_response2 == current_period
+
+
 
 
 

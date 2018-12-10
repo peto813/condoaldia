@@ -1,4 +1,4 @@
-import os, shutil, decimal, string, random
+import os, decimal, string, random, arrow
 from django.utils import timezone
 from django.db import models
 from django.contrib.auth.models import AbstractUser
@@ -21,7 +21,6 @@ from condo_manager.managers import UserManager, InmuebleManager
 from condo_manager.validators import validate_postitive
 from rolepermissions.checkers import has_permission, has_role
 from condominioaldia.roles import Condo as CondoRole, Resident as ResidentRole, Rentee as RenteeRole
-#from account_keeping.models import Transaction
 
 class User(AbstractUser):
 	id_number = models.CharField(max_length=100, verbose_name=_('Fiscal Number'), unique= True)
@@ -130,6 +129,19 @@ class Condo(models.Model):
 	address = models.CharField( max_length = 200, null = True, verbose_name = _('address') )
 	country =  CountryField(null= False, blank = True)
 
+	def get_current_billing_period(self):
+		monthly_invoices = self.invoices.filter( invoice_type= 'm', condo = self)
+		if monthly_invoices.exists():
+			next_monthly_invoice_date = arrow.get(monthly_invoices[0].invoice_date).ceil('month').replace(seconds=+1)
+			billing_period= {
+				'from': next_monthly_invoice_date.floor('month').datetime,
+				'to':next_monthly_invoice_date.ceil('month').datetime
+			}
+		else:
+			billing_period= {'from': arrow.get( self.user.date_joined).floor('month').datetime, 'to': arrow.get( self.user.date_joined).ceil('month').datetime}
+		return billing_period
+
+
 	def get_share_sum(self):
 		total = self.inmuebles.all().aggregate(share= Sum('share'))['share'] or decimal.Decimal(0)
 		return total
@@ -137,9 +149,6 @@ class Condo(models.Model):
 	def create_bank_account(self, data):
 		from account_keeping.models import Account
 		bank_account= Account.objects.create(user=self.user, **data)
-		print(bank_account)
-		#print(bank_account.pk, 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaa')
-		#self.user.bank_accounts.add( bank_account)
 
 	def approve(self):
 		self.approval_date = timezone.now()

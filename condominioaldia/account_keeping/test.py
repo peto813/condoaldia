@@ -185,6 +185,10 @@ class ApiEndPointsTestCase(APITestCase, URLPatternsTestCase):
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
     #invoices
+    def test_only_one_monthly_invoice_per_month(self):
+        '''Invoice only allows one monthly invoice per calendar month'''
+        raise NotImplementedError
+
     # def test_invoice_can_only_be_created_by_condos(self):
     #     '''Invoices can only be created by condos'''
     #     condo_user = User.objects.get(username="condo_user")
