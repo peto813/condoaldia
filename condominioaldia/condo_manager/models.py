@@ -262,7 +262,7 @@ class Inmueble(models.Model):
 		ordering = ['share']
 		verbose_name =_('Property')
 		verbose_name_plural = _('Properties')
-
+		unique_together = (("condo", "name"),)
  #    @property
  #    def is_orphan(self):#TELLS IF INMUEBLE HAS OWNDER ATTACHED TO IT OR NOT
  #        if self.inquilino:
