@@ -8,7 +8,12 @@ from rest_framework.test import APITestCase, URLPatternsTestCase
 from rest_framework import status
 from currency_history.models import Currency
 from account_keeping.models import Account, Category, Transaction, Invoice
+from rest_framework.routers import DefaultRouter
+from account_keeping.views import InvoiceViewSet
 
+# router= DefaultRouter()
+
+# router.register(r'invoices', InvoiceViewSet, basename="invoice")
 
 class ApiEndPointsTestCase(APITestCase, URLPatternsTestCase):
     '''Testing api endpoints'''
@@ -43,10 +48,16 @@ class ApiEndPointsTestCase(APITestCase, URLPatternsTestCase):
             transaction_date = timezone.now()
         )
 
-    urlpatterns = [
-        path('condos/', include('account_keeping.urls')),
-    ]
+    router= DefaultRouter()
+    router.register(r'invoices', InvoiceViewSet, basename="invoice")
 
+    urlpatterns = [
+        path('condos/', include('condo_manager.urls', namespace='condo_manager')),
+        path('condos/accounts/', include('account_keeping.urls', namespace='account_keeping')),
+        #path('condos/registration/', include('rest_auth.registration.urls')),
+        #path('users/', include('rest_auth.urls')),
+        path('condos/',  include(router.urls)),
+    ]
 
     #account
     def test_condo_and_resident_can_get_account_info(self):
@@ -62,7 +73,6 @@ class ApiEndPointsTestCase(APITestCase, URLPatternsTestCase):
         response=self.client.get(url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
-
     #account
     def test_only_condo_can_create_accounts(self):
         '''Accounts can only be created by condos'''
@@ -75,7 +85,7 @@ class ApiEndPointsTestCase(APITestCase, URLPatternsTestCase):
             'name':'test account',
             'currency' :currency.pk,
         }
-        response=self.client.post(url, acc_data, format= 'json')
+        response=self.client.post(url, acc_data)
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         resident_user = User.objects.get(username="resident_user")
         self.client.force_authenticate(user=resident_user)
@@ -242,33 +252,51 @@ class ApiEndPointsTestCase(APITestCase, URLPatternsTestCase):
         response= self.client.post(url, transaction_data3)
         #NO TRANSACTIONS BEYOND TODAY(THE FUTURE)
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-
-
-
-
-
     
     #invoices
-    # def test_only_one_monthly_invoice_per_month(self):
-    #     '''Invoice only allows one monthly invoice per calendar month'''
-    #     raise NotImplementedError
+    def test_only_one_monthly_invoice_per_month(self):
+        '''Invoice only allows one monthly invoice per calendar month'''
+        condo_user = User.objects.get(username="condo_user")
+        self.client.force_authenticate(user=condo_user)
+        url = reverse('invoice-list')
+        currency= Currency.objects.get(iso_code='PEN')
 
-    # def test_invoice_can_only_be_created_by_condos(self):
-    #     '''Invoices can only be created by condos'''
-    #     condo_user = User.objects.get(username="condo_user")
-    #     self.client.force_authenticate(user=condo_user)
-    #     url = reverse('account_keeping:invoice-list')
-    #     data= {
-    #         'invoice_type': 'o',
-    #         ''
-    #     }  
-    #     #condo case
-    #     response=self.client.post(url, data, format='json')
-    #     print(response.data)
-    #     self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        data= {
+            'invoice_type': 'm',
+            'invoice_date':timezone.now().date(),
+            'currency':currency.pk,
+            'amount_gross': 455.89
 
-    #     #resident case
-    #     resident_user = User.objects.get(username="resident_user")
-    #     self.client.force_authenticate(user=resident_user)
-    #     response=self.client.post(url, data, format='json')
-    #     self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        }  
+        response=self.client.post(url, data)
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        data['amount_gross'] = 333.33
+        response=self.client.post(url, data)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_invoice_marked_as_payed(self):
+        '''Invoice can be marked as payed'''
+        raise NotImplementedError
+
+    def test_invoice_can_only_be_created_by_condos(self):
+        '''Invoices can only be created by condos'''
+        condo_user = User.objects.get(username="condo_user")
+        self.client.force_authenticate(user=condo_user)
+        url = reverse('invoice-list')
+        currency= Currency.objects.get(iso_code='PEN')
+        data= {
+            'invoice_type': 'd',
+            'invoice_date':timezone.now().date(),
+            'currency':currency.pk,
+            'amount_gross': 455.89
+
+        }  
+        #condo case
+        response=self.client.post(url, data)
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+
+        #resident case
+        resident_user = User.objects.get(username="resident_user")
+        self.client.force_authenticate(user=resident_user)
+        response=self.client.post(url, data, format='json')
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)

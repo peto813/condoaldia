@@ -708,6 +708,17 @@ class InvoiceViewSet(CreateListRetrieveViewSet, mixins.DestroyModelMixin, mixins
     #     elif self.request.user.is_staff or self.request.user.is_superuser:
     #         return self.queryset
 
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        try:
+            self.perform_create(serializer)
+        except IntegrityError as e:
+            return Response(e.args[0], status=status.HTTP_400_BAD_REQUEST)
+        headers = self.get_success_headers(serializer.data)
+        return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
+
+
     def perform_create(self, serializer):
         serializer.save(condo= self.request.user.condo)
 

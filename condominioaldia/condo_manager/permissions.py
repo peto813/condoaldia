@@ -29,7 +29,6 @@ class IsResidentAdminOrReadOnly(permissions.BasePermission):
 
 	'''Used to set permissions in ResidentViewset endpoint'''
 	def has_object_permission(self, request, view, obj):
-
 		if request.user.is_resident and request.method in permissions.SAFE_METHODS and \
 			obj==request.user.resident:
 			return True
