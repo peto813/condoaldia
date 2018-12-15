@@ -1,4 +1,5 @@
-import json, decimal
+import json, decimal, arrow
+from django.utils import timezone
 from condo_manager.models import User, Condo,Resident, Inmueble #, User, Resident, Rentee
 from django.urls import path, re_path
 from django.conf.urls import url, include
@@ -39,6 +40,7 @@ class ApiEndPointsTestCase(APITestCase, URLPatternsTestCase):
             transaction_type='p',
             description='test transaction',
             category =transaction_category,
+            transaction_date = timezone.now()
         )
 
     urlpatterns = [
@@ -115,7 +117,13 @@ class ApiEndPointsTestCase(APITestCase, URLPatternsTestCase):
         url = reverse('account_keeping:transaction-list',kwargs={'account_pk':account.pk})
         self.client.force_authenticate(user=condo_user)
         transaction_category= Category.objects.get(name="condo_payment")
-        data ={'category':transaction_category.pk,'account':account.pk, 'transaction_type':'d','currency':currency.pk}
+        data ={
+            'transaction_date':arrow.now().format(fmt='YYYY-MM-DD', locale='en_us'),
+            'category':transaction_category.pk,
+            'account':account.pk,
+            'transaction_type':'d',
+            'currency':currency.pk
+        }
         response=self.client.post(url, data, format='json')
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         resident_user = User.objects.get(username="resident_user")
@@ -147,12 +155,29 @@ class ApiEndPointsTestCase(APITestCase, URLPatternsTestCase):
         currency= Currency.objects.get(iso_code='PEN')
         transaction_category= Category.objects.get(name="condo_payment")
         url = reverse('account_keeping:transaction-list', kwargs={'account_pk':account.pk})
-        data ={'category':transaction_category.pk,'account':account.pk, 'transaction_type':'w','currency':currency.pk}
+        data ={
+            'category':transaction_category.pk,
+            'account':account.pk,
+            'transaction_type':'w',
+            'currency':currency.pk,
+            'transaction_date':  arrow.now().format(fmt='YYYY-MM-DD', locale='en_us'),
+            'mark_invoice' : False
+        }
         response=self.client.post(url, data, format='json')
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
-        data ={'category':transaction_category.pk,'account':account.pk, 'transaction_type':'d','currency':currency.pk}
-        response=self.client.post(url, data, format='json')
+        data2 ={
+            'category':transaction_category.pk,
+            'account':account.pk,
+            'transaction_type':'d',
+            'currency':currency.pk,
+            'transaction_date':  arrow.now().format(fmt='YYYY-MM-DD', locale='en_us'),
+            'mark_invoice' : False
+        }
+        response=self.client.post(url, data2, format='json')
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+
+
+
 
     def test_condo_can_only_view_its_own_transactions(self):
         '''Condos can only view its own transactions'''
@@ -184,10 +209,49 @@ class ApiEndPointsTestCase(APITestCase, URLPatternsTestCase):
         response=self.client.get(url)
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
+    def test_condo_can_create_expense_for_period_only(self):
+        '''Condo can not post transaction type withdrawal outside correct period '''
+        condo_user= User.objects.get(username='condo_user')
+        self.client.force_authenticate(user=condo_user)
+        account= condo_user.bank_accounts.all().first()
+        period_date = condo_user.condo.get_current_billing_period()['from']
+        url = reverse('account_keeping:transaction-list',kwargs={'account_pk':account.pk})
+        transaction_data= {
+            'transaction_type':'w',
+            'description':'Compra de cabañas y cabíllas',
+            'amount_gross':4463.9,
+            'transaction_date': arrow.get(period_date).format(fmt='YYYY-MM-DD', locale='en_us')
+        }
+        response= self.client.post(url, transaction_data)
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        transaction_data2= {
+            'transaction_type':'w',
+            'description':'second purchase',
+            'amount_gross':100.9,
+            'transaction_date': arrow.get(period_date).format(fmt='YYYY-MM-DD', locale='en_us')
+        }
+        response= self.client.post(url, transaction_data2)
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+
+        transaction_data3= {
+            'transaction_type':'w',
+            'description':'second purchase',
+            'amount_gross':10220.9,
+            'transaction_date': '2020-01-01'
+        }
+        response= self.client.post(url, transaction_data3)
+        #NO TRANSACTIONS BEYOND TODAY(THE FUTURE)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+
+
+
+
+    
     #invoices
-    def test_only_one_monthly_invoice_per_month(self):
-        '''Invoice only allows one monthly invoice per calendar month'''
-        raise NotImplementedError
+    # def test_only_one_monthly_invoice_per_month(self):
+    #     '''Invoice only allows one monthly invoice per calendar month'''
+    #     raise NotImplementedError
 
     # def test_invoice_can_only_be_created_by_condos(self):
     #     '''Invoices can only be created by condos'''

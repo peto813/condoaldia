@@ -126,8 +126,7 @@ class InvoiceManager(models.Manager):
 
 @python_2_unicode_compatible
 class Invoice(AmountMixin, models.Model):
-    '''
-    '''
+    ''''''
     INVOICE_TYPES = {
         'withdrawal': 'w',
         'deposit': 'd',
@@ -142,7 +141,7 @@ class Invoice(AmountMixin, models.Model):
     ]
     customer = models.ForeignKey(User, on_delete=models.PROTECT, null= True)
     condo = models.ForeignKey(Condo, on_delete =models.PROTECT, null= False, default = None, related_name = 'invoices')
-    payed = models.BooleanField(default= False)
+    #payed = models.BooleanField(default= False)
 
     invoice_type = models.CharField(
         max_length=1,
@@ -241,7 +240,7 @@ class Invoice(AmountMixin, models.Model):
     def save(self, *args, **kwargs):
         self.set_amount_fields()
         self.set_value_fields('invoice_type')
-        return super(Invoice, self).save(*args, **kwargs)
+        return super().save(*args, **kwargs)
 
     @property
     def balance(self):
@@ -368,7 +367,7 @@ class Transaction(AmountMixin, models.Model):
 
     transaction_date = models.DateField(
         verbose_name=_('Transaction date'),
-        auto_now_add=True
+        null= False
     )
 
     description = models.TextField(
@@ -403,7 +402,9 @@ class Transaction(AmountMixin, models.Model):
         Category,
         related_name='transactions',
         verbose_name=_('Category'),
-        on_delete = models.PROTECT
+        on_delete = models.PROTECT,
+        null= True,
+        blank= True
     )
 
     # currency = models.ForeignKey(
@@ -458,8 +459,8 @@ class Transaction(AmountMixin, models.Model):
         verbose_name_plural = _('Transactions')
 
     def __str__(self):
-        if self.invoice_number:
-            return self.invoice_number
+        # if self.invoice_number:
+        #     return self.invoice_number
         if self.invoice and self.invoice.invoice_number:
             return self.invoice.invoice_number
         return '{0} - {1}'.format(self.payee, self.category)
@@ -485,6 +486,6 @@ class Transaction(AmountMixin, models.Model):
     def save(self, *args, **kwargs):
         self.set_amount_fields()
         self.set_value_fields('transaction_type')
-        return super(Transaction, self).save(*args, **kwargs)
+        return super().save(*args, **kwargs)
 
 

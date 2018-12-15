@@ -226,9 +226,10 @@ class CondoTestCase(APITestCase):
         #add a monthly invoice and check new expected response
         currency = Currency.objects.get(iso_code='USD')
         invoice = condo.invoices.create(
-            invoice_date =expected_response['from'],
+            invoice_date = timezone.now().date(),
             currency = Currency.objects.get(iso_code='USD'),
-            invoice_type= 'm'
+            invoice_type= 'm',
+            condo = condo
         )
         current_period = condo.get_current_billing_period()
         latest_monthly_invoice = condo.invoices.all().latest('invoice_date')
@@ -270,29 +271,29 @@ class InmuebleTestCase(TestCase):
         inmueble.resident= resident
         inmueble.save()
 
-    # def test_is_not_rented(self):
-    #     ''' Property can determine if it is NOT rented '''
-    #     inmueble = Inmueble.objects.get(id=1)
-    #     assert inmueble.is_rented == False
+    def test_is_not_rented(self):
+        ''' Property can determine if it is NOT rented '''
+        inmueble= Inmueble.objects.get(name='1-a')
+        assert inmueble.is_rented == False
 
-    # def test_is_not_board_member(self):
-    #     ''' Property can determine if it is NOT a board member '''
-    #     inmueble = Inmueble.objects.get(id=1)
-    #     assert inmueble.is_board_member == False
+    def test_is_not_board_member(self):
+        ''' Property can determine if it is NOT a board member '''
+        inmueble= Inmueble.objects.get(name='1-a')
+        assert inmueble.is_board_member == False
 
 
-    # def test_is_rented(self):
-    #     ''' Property can determine if it is rented '''
-    #     inmueble = Inmueble.objects.get(id=1)
-    #     user = User.objects.get(email='colio2@gmail.com')
-    #     inmueble.rentee= user.rentee
-    #     assert inmueble.is_rented == True
+    def test_is_rented(self):
+        ''' Property can determine if it is rented '''
+        inmueble= Inmueble.objects.get(name='1-a')
+        user = User.objects.get(email='colio2@gmail.com')
+        inmueble.rentee= user.rentee
+        assert inmueble.is_rented == True
 
-    # def test_is_board_member(self):
-    #     ''' Property can determine if it is a board member '''
-    #     inmueble = Inmueble.objects.get(id=1)
-    #     inmueble.board_position= 'President'
-    #     assert inmueble.is_board_member == True
+    def test_is_board_member(self):
+        ''' Property can determine if it is a board member '''
+        inmueble= Inmueble.objects.get(name='1-a')
+        inmueble.board_position= 'President'
+        assert inmueble.is_board_member == True
 
 
 
@@ -306,13 +307,13 @@ class ResidentTestCase(TestCase):
         resident= Resident.objects.create(user= resident_user)
         
 
-    # def test_resident_send_welcome_email(self):
-    #     '''Resident model sends welcome email'''
-    #     inmueble= Inmueble.objects.get(id=1)
-    #     resident_user= User.objects.get(username='b')
-    #     resident = Resident.objects.get(user=resident_user)
-    #     resident.send_welcome_email(inmueble)
-    #     self.assertEqual(len(mail.outbox), 1)
+    def test_resident_send_welcome_email(self):
+        '''Resident model sends welcome email'''
+        inmueble= Inmueble.objects.get(name='1-a')
+        resident_user= User.objects.get(username='b')
+        resident = Resident.objects.get(user=resident_user)
+        resident.send_welcome_email(inmueble)
+        self.assertEqual(len(mail.outbox), 1)
 
 
 class PermissionTestCase(APITestCase, URLPatternsTestCase):
@@ -457,29 +458,29 @@ class PermissionTestCase(APITestCase, URLPatternsTestCase):
 
     #INMUEBLE(PROPERTIES) VIEW PERMISSIONS
 
-    # def test_condo_can_add_edit_its_properties(self):
-    #     '''Condo can not add properties to itself the belong to others'''
-    #     condo_user1 = User.objects.get(username='condo_user1')
-    #     first_property = Inmueble.objects.get(name= '1-a')
-    #     self.client.force_authenticate(user=condo_user1)
-    #     url = reverse('condo_manager:user-detail', kwargs={'pk':first_property.pk})
-    #     response=self.client.get(url)
-    #     self.assertEqual(response.status_code, status.HTTP_200_OK)
-    #     data= {
-    #         'name':'new name!'
-    #     }
-    #     response=self.client.patch(url, data)
-    #     self.assertEqual(response.status_code, status.HTTP_200_OK)
+    def test_condo_can_add_edit_its_properties(self):
+        '''Condo can edit its properties'''
+        condo_user1 = User.objects.get(username='condo_user1')
+        first_property = Inmueble.objects.get(name= '1-a')
+        self.client.force_authenticate(user=condo_user1)
+        url = reverse('condo_manager:inmueble-detail', kwargs={'pk':first_property.pk})
+        response=self.client.get(url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        data= {
+            'name':'new name!'
+        }
+        response=self.client.patch(url, data)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
 
 
-    # def test_condo_can_not_add_edit_delete_others_properties(self):
-    #     '''Condo does not have access to other condos data resources'''
-    #     first_property = Inmueble.objects.get(name= '1-a')
-    #     condo_user2 = User.objects.get(username ='condo_user2')
-    #     self.client.force_authenticate(user=condo_user2)
-    #     url = reverse('condo_manager:user-detail', kwargs={'pk':first_property.pk})
-    #     response=self.client.get(url)
-    #     self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+    def test_condo_can_not_add_edit_delete_others_properties(self):
+        '''Condo does not have access to other condos data resources'''
+        first_property = Inmueble.objects.get(name= '1-a')
+        condo_user2 = User.objects.get(username ='condo_user2')
+        self.client.force_authenticate(user=condo_user2)
+        url = reverse('condo_manager:inmueble-detail', kwargs={'pk':first_property.pk})
+        response=self.client.get(url)
+        assert (response.status_code == status.HTTP_403_FORBIDDEN or status.HTTP_404_NOT_FOUND)
 
     def test_property_cant_be_created_by_resident(self):
         '''Property can not be created by resident'''

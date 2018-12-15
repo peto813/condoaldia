@@ -71,24 +71,35 @@ class TransactionSerializer(serializers.ModelSerializer):
 	mark_invoice = serializers.BooleanField(
 		label=_('Mark invoice as paid?'),
 		initial=False,
-		required=False
+		required=False,
+		#allow_null= False
 	)
 	class Meta:
 		#fields = ['user','name', 'account_number','routing_number','currency', 'initial_amount', 'total_amount', 'active']
 		fields ='__all__'
 		model  = Transaction
-		read_only_fields = ['account']
+		read_only_fields = ['account','value_net', 'value_gross']
 
-	def save(self, *args, **kwargs):
-		if hasattr(self.instance, 'invoice'):
-			if self.instance.invoice and self.validated_data.get('mark_invoice'):
+
+	def create(self, vd):
+		mark_invoice=vd.pop('mark_invoice', None)
+		instance= Transaction.objects.create(**vd)
+		if hasattr(instance, 'invoice'):
+			if instance.invoice and mark_invoice:
 				# Set the payment date on related invoice
-				self.instance.invoice.payment_date = self.instance.transaction_date
-				self.instance.invoice.save()
-		return super().save(*args, **kwargs)
+				instance.invoice.payment_date = instance.transaction_date
+				instance.invoice.save()
+		return instance
 
+	# def __init__(self, *args, **kwargs):
+	# 	super().__init__(*args, **kwargs)
+	# 	self.fields['payee'].help_text = _(
+	# 		'<a href="{}">Add a payee</a>').format(
+	# 	reverse('account_keeping:account_keeping_payee_create'))
 
 class InvoiceSerializer(serializers.ModelSerializer):
+	condo = serializers.PrimaryKeyRelatedField( read_only= True)
 	class Meta:
 		fields ='__all__'
 		model  = Invoice
+		read_only_fields = ['account','value_net', 'value_gross']

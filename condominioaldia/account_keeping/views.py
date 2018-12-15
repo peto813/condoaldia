@@ -13,6 +13,7 @@ from django.template.defaultfilters import date as date_filter
 from django.utils.decorators import method_decorator
 from django.utils.timezone import now
 from django.views import generic
+from django.db import IntegrityError
 
 from currency_history.models import Currency, CurrencyRateHistory
 from dateutil import relativedelta
@@ -707,8 +708,8 @@ class InvoiceViewSet(CreateListRetrieveViewSet, mixins.DestroyModelMixin, mixins
     #     elif self.request.user.is_staff or self.request.user.is_superuser:
     #         return self.queryset
 
-    # def perform_create(self, serializer):
-    #     serializer.save(user= self.request.user)
+    def perform_create(self, serializer):
+        serializer.save(condo= self.request.user.condo)
 
 
 
@@ -815,25 +816,13 @@ class TransactionViewSet(CreateListRetrieveViewSet, mixins.DestroyModelMixin, mi
         account=models.Account.objects.get(pk = account_pk)
         serializer.save(account=account )
 
-    # def get_condo_or_404(self, condo_id):
-    #     condo= get_object_or_404(Condo, pk= condo_id)
-    #     return condo
-
-    # def perform_create(self, serializer):
-    #     print(self.kwargs.get('account_pk'))
-    #     a
-    #     pass
-    #     print(dir(self.request))
-    #     print(self.request.data)
-    #     if self.request.user.is_condo:
-    #         pass
-        #     instance = serializer.save(condo=self.request.user.condo)
-        #self.request.user.condo.create_bank_account(serializer.validated_data)
-
-    # def create(self, request, account_pk=None, *args, **kwargs):
-    #     serializer = self.get_serializer(data=request.data)
-    #     serializer.is_valid(raise_exception=True)
-    #     self.perform_create(serializer)
-    #     headers = self.get_success_headers(serializer.data)
-    #     return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
+    def create(self, request, account_pk=None, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        try:
+            self.perform_create(serializer)
+        except IntegrityError as e:
+            return Response(e.args[0], status=status.HTTP_400_BAD_REQUEST)
+        headers = self.get_success_headers(serializer.data)
+        return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
  

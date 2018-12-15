@@ -44,9 +44,9 @@ class CondoViewSet(  mixins.UpdateModelMixin, RetrieveViewSet):
 	permission_classes=(IsAuthenticated, IsCondoOwnerOrReadOnly,)
 
 class UserViewSet(mixins.UpdateModelMixin, RetrieveViewSet):
-    queryset = User.objects.all()
-    serializer_class = UserSerializer
-    permission_classes=(IsAuthenticated, IsUserOwnerOrReadOnly,)
+	queryset = User.objects.all()
+	serializer_class = UserSerializer
+	permission_classes=(IsAuthenticated, IsUserOwnerOrReadOnly,)
 
 class InmuebleViewSet(CreateListRetrieveViewSet, mixins.UpdateModelMixin):
 	queryset= Inmueble.objects.all()
