@@ -13,7 +13,7 @@ from django.template.defaultfilters import date as date_filter
 from django.utils.decorators import method_decorator
 from django.utils.timezone import now
 from django.views import generic
-from django.db import IntegrityError
+from django.db import IntegrityError, InternalError
 
 from currency_history.models import Currency, CurrencyRateHistory
 from dateutil import relativedelta
@@ -712,9 +712,29 @@ class InvoiceViewSet(CreateListRetrieveViewSet, mixins.DestroyModelMixin, mixins
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         try:
+            '''
+            this addresses a database UNIQUE INDEX that checks if 
+            there are existing monthly invoices prior to saving a monthly invoice
+            '''
             self.perform_create(serializer)
         except IntegrityError as e:
             return Response(e.args[0], status=status.HTTP_400_BAD_REQUEST)
+        except InternalError as e:
+            return Response(e.args[0], status=status.HTTP_400_BAD_REQUEST)
+
+        # try:
+        #     '''
+        #     this addresses a database pre save trigger that checks if 
+        #     there are existing monthly invoices prior to saving an invoice
+        #     '''
+        #     self.perform_create(serializer)
+        # except InternalError as e:
+        #     return Response(e.args[0], status=status.HTTP_400_BAD_REQUEST)
+
+
+        self.perform_create(serializer)
+
+
         headers = self.get_success_headers(serializer.data)
         return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
 
@@ -831,9 +851,42 @@ class TransactionViewSet(CreateListRetrieveViewSet, mixins.DestroyModelMixin, mi
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         try:
+            '''
+            this addresses a database UNIQUE INDEX that checks if 
+            there are existing monthly invoices prior to saving a monthly invoice
+            '''
             self.perform_create(serializer)
         except IntegrityError as e:
+            return Response(e.args[0], status=status.HTTP_400_BAD_REQUEST)
+        except InternalError as e:
             return Response(e.args[0], status=status.HTTP_400_BAD_REQUEST)
         headers = self.get_success_headers(serializer.data)
         return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
  
+    # def perform_update(self, serializer):
+    #     try:
+    #         serializer.save()
+    #     except IntegrityError as e:
+    #         return Response(e.args[0], status=status.HTTP_400_BAD_REQUEST)
+    #     except InternalError as e:
+    #         return Response(e.args[0], status=status.HTTP_400_BAD_REQUEST)
+
+    def update(self, request, account_pk=None, *args, **kwargs):
+        partial = kwargs.pop('partial', False)
+        instance = self.get_object()
+        serializer = self.get_serializer(instance, data=request.data, partial=partial)
+        serializer.is_valid(raise_exception=True)
+        try:
+            self.perform_update(serializer)
+        except IntegrityError as e:
+            return Response(e.args[0], status=status.HTTP_400_BAD_REQUEST)
+        except InternalError as e:
+            return Response(e.args[0], status=status.HTTP_400_BAD_REQUEST)
+        
+        headers = self.get_success_headers(serializer.data)
+        if getattr(instance, '_prefetched_objects_cache', None):
+            # If 'prefetch_related' has been applied to a queryset, we need to
+            # forcibly invalidate the prefetch cache on the instance.
+            instance._prefetched_objects_cache = {}
+
+        return Response(serializer.data)

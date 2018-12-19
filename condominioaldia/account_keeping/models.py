@@ -375,11 +375,11 @@ class Transaction(AmountMixin, models.Model):
         blank=True,
     )
 
-    # invoice_number = models.CharField(
-    #     verbose_name=_('Invoice No.'),
-    #     max_length=256,
-    #     blank=True,
-    # )
+    invoice_number = models.CharField(
+        verbose_name=_('Invoice No.'),
+        max_length=256,
+        blank=True,
+    )
 
     invoice = models.ForeignKey(
         Invoice,
@@ -459,8 +459,8 @@ class Transaction(AmountMixin, models.Model):
         verbose_name_plural = _('Transactions')
 
     def __str__(self):
-        # if self.invoice_number:
-        #     return self.invoice_number
+        if self.invoice_number:
+            return self.invoice_number
         if self.invoice and self.invoice.invoice_number:
             return self.invoice.invoice_number
         return '{0} - {1}'.format(self.payee, self.category)

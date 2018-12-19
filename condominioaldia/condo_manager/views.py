@@ -89,3 +89,9 @@ class CustomConfirmEmailView(ConfirmEmailView):
 			ctx = self.get_context_data()
 			return self.render_to_response(ctx)
 		return redirect(settings.LOGIN_URL)
+
+class GenerateMonthlyInvoiceView(APIView):
+	permission_classes=(IsAuthenticated, IsCondoAdminOrReadOnly,)
+
+	def post(self, request):
+		pass

@@ -1,4 +1,4 @@
-import numbers, json, PIL, tempfile, os, decimal, arrow
+import numbers, json, PIL, tempfile, os, decimal, arrow, time
 from django.utils import timezone
 from django.urls import path, re_path
 from django.test import TestCase, Client
@@ -14,9 +14,14 @@ from rolepermissions.checkers import has_permission, has_role
 from django.conf import settings
 from django.core import mail
 
+
+
+SLOW_TEST_THRESHOLD = 0.3
+
 class ApiEndPointsTestCase(APITestCase, URLPatternsTestCase):
     '''Testing api endpoints'''
     def setUp(self):
+        self._started_at = time.time()
         condo_user= User.objects.create(id_number="J8309920", mobile="04140934140", email ="12@gmail.com", first_name= "residencias kiara", username="user1")
         condo=Condo.objects.create( user=condo_user, approved=True, terms_accepted= True, active= True, name='Residencias Isla Paraiso')
         resident_user= User.objects.create(username='b', id_number="v6750435", mobile="041467934140", email ="averga@hotmail.com", first_name= "einstein", last_name= "millan")
@@ -33,6 +38,10 @@ class ApiEndPointsTestCase(APITestCase, URLPatternsTestCase):
         #path('condos/', include('rest_auth.urls')),
     ]
 
+    def tearDown(self):
+        elapsed = time.time() - self._started_at
+        if elapsed > SLOW_TEST_THRESHOLD:
+            print('{} ({}s)'.format(self.id(), round(elapsed, 2)))
     #user
     def test_get_user_details(self):
         user = User.objects.get(email="12@gmail.com")
