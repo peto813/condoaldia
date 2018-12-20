@@ -69,15 +69,6 @@ CREATE TRIGGER monthIsClosedForInvoiceInsert
 BEFORE INSERT OR UPDATE ON account_keeping_invoice
 FOR EACH ROW EXECUTE PROCEDURE monthIsClosed();
 
--- DROP TRIGGER IF EXISTS monthIsClosedForUpdate ON account_keeping_invoice;
--- CREATE TRIGGER monthIsClosedForInvoiceUpdate 
--- BEFORE UPDATE ON account_keeping_invoice
--- FOR EACH ROW EXECUTE PROCEDURE monthIsClosed();
-
-
-
-
-
 
 CREATE OR REPLACE FUNCTION checkIfMonthClosed()
 RETURNS TRIGGER AS $$
@@ -111,7 +102,9 @@ CREATE TRIGGER monthIsClosedForTransactions
 BEFORE INSERT OR UPDATE ON account_keeping_transaction
 FOR EACH ROW EXECUTE PROCEDURE checkIfMonthClosed();
 
--- DROP TRIGGER IF EXISTS monthTransactionsClosedForInsert ON account_keeping_transaction;
--- CREATE TRIGGER monthIsClosedForTransactionInsert
--- BEFORE UPDATE ON account_keeping_transaction
--- FOR EACH ROW EXECUTE PROCEDURE monthIsClosed();
+
+
+--	DROP A DATABASE PRE STUFF (IF YOU CANT DROP IT)
+-- SELECT pg_terminate_backend(pg_stat_activity.pid)
+-- FROM pg_stat_activity
+-- WHERE pg_stat_activity.datname = 'condominioaldia_db';

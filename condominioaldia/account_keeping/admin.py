@@ -14,14 +14,24 @@ admin.site.register(models.Account, AccountAdmin)
 
 
 class InvoiceAdmin(admin.ModelAdmin):
-    list_display = [
-        'invoice_type', 'invoice_date', 'currency', 'amount_net', 'vat',
-        'amount_gross', 'payment_date']
-    list_filter = ['invoice_type', 'currency', 'payment_date']
-    date_hierarchy = 'invoice_date'
-    search_fields = ['invoice_number', 'description']
+    pass
+    # list_display = [
+    #     'invoice_type', 'invoice_date', 'currency', 'amount_net', 'vat',
+    #     'amount_gross', 'payment_date']
+    # list_filter = ['invoice_type', 'currency', 'payment_date']
+    # date_hierarchy = 'invoice_date'
+    # search_fields = ['invoice_number', 'description']
 admin.site.register(models.Invoice, InvoiceAdmin)
 
+
+class OrderAdmin(admin.ModelAdmin):
+    list_display = [
+        'order_type', 'order_date', 'currency', 'amount_net', 'vat',
+        'amount_gross', 'payment_date']
+    list_filter = ['order_type', 'currency', 'payment_date']
+    date_hierarchy = 'order_date'
+    search_fields = ['order_number', 'description']
+admin.site.register(models.Order, OrderAdmin)
 
 class PayeeAdmin(admin.ModelAdmin):
     list_display = ['name', ]

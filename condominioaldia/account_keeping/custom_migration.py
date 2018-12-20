@@ -14,9 +14,9 @@ def load_data_from_sql(apps, schema_editor):
 
 class Migration(migrations.Migration):
 
-    dependencies = [
-        ('account_keeping', '0001_initial'),
-    ]
+    # dependencies = [
+    #     ('account_keeping', '0001_initial'),
+    # ]
 
     operations = [
     	migrations.RunPython(load_data_from_sql)

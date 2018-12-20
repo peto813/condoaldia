@@ -232,11 +232,22 @@ class CondoTestCase(APITestCase):
         }
         assert expected_response == current_period
         assert 'from' and 'to' in current_period
-        #add a monthly invoice and check new expected response
         currency = Currency.objects.get(iso_code='USD')
+
+        order_data= {
+            "condo": condo,
+            "order_type": "d",
+            'order_date':  arrow.now().replace(months=-10).format(fmt='YYYY-MM-DD', locale='en_us'),
+            #"order_number": "123456789",
+            "description": "you are here, with the in-voice, get it?",
+            "amount_gross": 20,
+            "currency": currency
+        }
+        order= condo.orders.create(**order_data)
+        #add a monthly invoice and check new expected response
         invoice = condo.invoices.create(
             invoice_date = timezone.now().date(),
-            currency = Currency.objects.get(iso_code='USD'),
+            order = order,
             invoice_type= 'm',
             condo = condo
         )

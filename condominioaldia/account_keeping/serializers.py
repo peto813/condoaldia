@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 from rest_framework import serializers
-from .models import Account, Transaction, Invoice
+from .models import Account, Transaction, Invoice, Order
 from condo_manager.serializers import BaseUserSerializer
 from django.contrib.auth import get_user_model
 from rest_framework.reverse import reverse
@@ -99,6 +99,7 @@ class TransactionSerializer(serializers.ModelSerializer):
 
 class InvoiceSerializer(serializers.ModelSerializer):
 	condo = serializers.PrimaryKeyRelatedField( read_only= True)
+	order= serializers.PrimaryKeyRelatedField(queryset = Order.objects.all())
 	class Meta:
 		fields ='__all__'
 		model  = Invoice
