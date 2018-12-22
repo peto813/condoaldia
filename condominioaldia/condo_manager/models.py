@@ -138,8 +138,6 @@ class Condo(models.Model):
 				'to':next_monthly_invoice_date.ceil('month').datetime
 			}
 		else:
-			print(arrow.get( self.user.date_joined).floor('month').datetime)
-			print(arrow.get( self.user.date_joined).ceil('month').datetime)
 			billing_period= {'from': arrow.get( self.user.date_joined).floor('month').datetime, 'to': arrow.get( self.user.date_joined).ceil('month').datetime}
 		return billing_period
 

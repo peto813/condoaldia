@@ -61,6 +61,43 @@ END
 $$ LANGUAGE plpgsql;
 
 
+CREATE OR REPLACE FUNCTION invocePayed()
+RETURNS TRIGGER AS $$
+BEGIN
+	IF (TG_OP = 'UPDATE')  THEN 
+	    IF (
+	    	--IF ALREADY PAYED RAISE EXCEPTION
+	    	old.is_payed
+	      ) IS TRUE THEN
+	      RAISE EXCEPTION 'This invoice has been payed, update prohibited';
+	    ELSIF (
+	    	--IF MODIFYING 
+	    	old.condo_id <>new.condo_id OR
+	    	old.invoice_type <>new.invoice_type OR
+	    	old.invoice_number <>new.invoice_number OR
+	    	old.invoice_date <>new.invoice_date OR
+	    	old.order_id <>new.order_id OR
+	    	old.created <>new.created
+
+	    ) THEN RAISE EXCEPTION 'This invoice has been payed, update prohibited 2';
+	    ELSIF (
+	    	--IF MODIFYING 
+	    	old.is_payed =new.is_payed AND
+	    	old.is_payed IS TRUE
+
+	    ) THEN RAISE EXCEPTION 'This invoice has been payed, update prohibited 3';
+
+	    END IF;
+	END IF;
+	RETURN NEW;
+END
+$$ LANGUAGE plpgsql;
+
+DROP TRIGGER IF EXISTS preventInvoiceUpdateIfPayed ON account_keeping_invoice;
+CREATE TRIGGER preventInvoiceUpdateIfPayed 
+BEFORE INSERT OR UPDATE ON account_keeping_invoice
+FOR EACH ROW EXECUTE PROCEDURE invocePayed();
+
 /* This is the trigger function that is returned by the above function
 it prevents an insert if a monthly invoice already exists for the invoice date.
  */
@@ -68,6 +105,24 @@ DROP TRIGGER IF EXISTS monthIsClosedForInsert ON account_keeping_invoice;
 CREATE TRIGGER monthIsClosedForInvoiceInsert 
 BEFORE INSERT OR UPDATE ON account_keeping_invoice
 FOR EACH ROW EXECUTE PROCEDURE monthIsClosed();
+
+
+CREATE OR REPLACE FUNCTION checkOrderInvoiced()
+RETURNS TRIGGER AS $$
+BEGIN
+	IF (TG_OP = 'UPDATE') THEN
+		IF OLD.status= 'i' THEN
+			RAISE EXCEPTION 'THIS ORDER HAS BEEN INVOICED, UPDATE FORBIDDEN';
+		END IF;
+	END IF;
+	return NEW;
+END
+$$ LANGUAGE plpgsql;
+
+DROP TRIGGER IF EXISTS preventOrderUpdateIfInvoiced ON account_keeping_order;
+CREATE TRIGGER preventOrderUpdateIfInvoiced 
+BEFORE UPDATE ON account_keeping_order
+FOR EACH ROW EXECUTE PROCEDURE checkOrderInvoiced();
 
 
 CREATE OR REPLACE FUNCTION checkIfMonthClosed()

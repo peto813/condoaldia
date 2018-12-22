@@ -9,16 +9,51 @@ from rest_framework import status
 from currency_history.models import Currency
 from account_keeping.models import Account, Category, Transaction, Invoice, Order
 from rest_framework.routers import DefaultRouter
-from account_keeping.views import InvoiceViewSet
+from account_keeping.views import InvoiceViewSet, OrderViewSet
+from django.db import IntegrityError, InternalError
 
-SLOW_TEST_THRESHOLD = 0.1
+SLOW_TEST_THRESHOLD = 0.3
+
+
+class InvoiceTestCase(APITransactionTestCase):
+    def setUp(self):
+        condo_user= User.objects.create(id_number="J8309920", mobile="04140934140", email ="12@gmail.com", username="condo_user")
+        condo=Condo.objects.create( user=condo_user, approved=True, terms_accepted= True, active= True, name='Residencias Isla Paraiso')
+        currency = Currency.objects.create(iso_code ='PEN', title='Sol Peruano' , abbreviation= 'PEN')
+
+    def test_orders_cant_be_edited_once_invoiced(self):
+        '''Orders when invoiced can not be edited '''
+        condo_user = User.objects.get(username="condo_user")
+        self.client.force_authenticate(user=condo_user)
+        currency= Currency.objects.get(iso_code='PEN')
+
+        order= Order.objects.create(**{
+            "condo": condo_user.condo,
+            "order_type": "d",
+            'order_date':  arrow.now().replace(months=-10).format(fmt='YYYY-MM-DD', locale='en_us'),
+            "amount_gross": 20,
+            "currency": currency
+        })
+        invoice = order.create_invoice()
+        #invoiced
+        self.assertEqual(order.status, 'i')
+        order.amount_gross =789
+        raise NotImplementedError
+        #a
+        #order.save()
+        #print(order.amount_gross)
+        #order= order.save()
+        # a= Order.objects.all().first()
+        # a.status='a'
+        # a.save()
+        # print(a.status)
 
 
 class ApiEndPointsTestCase(APITransactionTestCase, URLPatternsTestCase):
     '''Testing api endpoints'''
     router= DefaultRouter()
     router.register(r'invoices', InvoiceViewSet, basename="invoice")
-
+    router.register(r'orders', OrderViewSet, basename="order")
     urlpatterns = [
         path('condos/', include('condo_manager.urls', namespace='condo_manager')),
         path('condos/accounts/', include('account_keeping.urls', namespace='account_keeping')),
@@ -68,7 +103,6 @@ class ApiEndPointsTestCase(APITransactionTestCase, URLPatternsTestCase):
             "condo": condo,
             "invoice_type": "d",
             'invoice_date':  arrow.now().replace(months=-10).format(fmt='YYYY-MM-DD', locale='en_us'),
-            "invoice_number": "123456789",
             "order":order
             #"amount_gross": 20,
             #"currency": currency
@@ -179,38 +213,67 @@ class ApiEndPointsTestCase(APITransactionTestCase, URLPatternsTestCase):
 
     def test_transactions_prohibited_for_update_for_closed_month(self):
         '''Transactions can not be created for a closed month'''
+        currency= Currency.objects.get(iso_code='PEN')
+
         condo_user = User.objects.get(username="condo_user")
         transaction= Transaction.objects.get(id=333)
-        invoice= Invoice.objects.all().first()
-        invoice.invoice_type='m'
-        invoice.save()
+        order= Order.objects.create(**{
+            "condo": condo_user.condo,
+            "order_type": "m",
+            'order_date':  arrow.now().replace(months=-10).format(fmt='YYYY-MM-DD', locale='en_us'),
+            #"invoice_number": "123456789",
+            "amount_gross": 20,
+            "currency": currency,
+            
+        })
+        invoice_data={
+            "condo": condo_user.condo,
+            "invoice_type": "m",
+            'invoice_date':  arrow.now().replace(months=-10).format(fmt='YYYY-MM-DD', locale='en_us'),
+            "order":order
+        }
+        invoice= Invoice.objects.create(**invoice_data)
         url = reverse('account_keeping:transaction-detail', kwargs={'account_pk':transaction.account.pk, 'pk':transaction.pk})
         self.client.force_authenticate(user=condo_user)
         response=self.client.patch(url, {'transaction_type':'w'})
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
-    # def test_transactions_prohibited_for_insert_for_closed_month(self):
-    #     '''Transactions can not be modified for a closed month'''
-    #     condo_user = User.objects.get(username="condo_user")
-    #     transaction= Transaction.objects.get(id=333)
-    #     invoice= Invoice.objects.all().first()
-    #     invoice.invoice_type='m'
-    #     invoice.save()
-    #     account= condo_user.bank_accounts.all().first()
-    #     currency= Currency.objects.get(iso_code='PEN')
+    def test_transactions_prohibited_for_insert_for_closed_month(self):
+        '''Transactions can not be modified for a closed month'''
+        currency= Currency.objects.get(iso_code='PEN')
+        condo_user = User.objects.get(username="condo_user")
+        transaction= Transaction.objects.get(id=333)
+        order= Order.objects.create(**{
+            "condo": condo_user.condo,
+            "order_type": "m",
+            'order_date':  arrow.now().replace(months=-10).format(fmt='YYYY-MM-DD', locale='en_us'),
+            #"invoice_number": "123456789",
+            "amount_gross": 20,
+            "currency": currency,
+            
+        })
+        invoice_data={
+            "condo": condo_user.condo,
+            "invoice_type": "m",
+            'invoice_date':  arrow.now().replace(months=-10).format(fmt='YYYY-MM-DD', locale='en_us'),
+            "order":order
+        }
+        invoice= Invoice.objects.create(**invoice_data)
+        account= condo_user.bank_accounts.all().first()
+        currency= Currency.objects.get(iso_code='PEN')
 
-    #     transaction_category= Category.objects.get(name="condo_payment")
-    #     url = reverse('account_keeping:transaction-list', kwargs={'account_pk':transaction.account.pk})
-    #     self.client.force_authenticate(user=condo_user)
-    #     data ={
-    #         'transaction_date':arrow.now().format(fmt='YYYY-MM-DD', locale='en_us'),
-    #         'category':transaction_category.pk,
-    #         'account':account.pk,
-    #         'transaction_type':'d',
-    #         'currency':currency.pk
-    #     }
-    #     response=self.client.post(url, data, format='json')
-    #     self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        transaction_category= Category.objects.get(name="condo_payment")
+        url = reverse('account_keeping:transaction-list', kwargs={'account_pk':transaction.account.pk})
+        self.client.force_authenticate(user=condo_user)
+        data ={
+            'transaction_date':arrow.now().format(fmt='YYYY-MM-DD', locale='en_us'),
+            'category':transaction_category.pk,
+            'account':account.pk,
+            'transaction_type':'d',
+            'currency':currency.pk
+        }
+        response=self.client.post(url, data, format='json')
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
     def test_residents_can_only_create_transaction_type_deposit(self):
         '''The only transaction type allowed for creation by resident is deposit'''
@@ -315,71 +378,53 @@ class ApiEndPointsTestCase(APITransactionTestCase, URLPatternsTestCase):
         self.client.force_authenticate(user=condo_user)
         url = reverse('invoice-list')
         currency= Currency.objects.get(iso_code='PEN')
-        now = utc = arrow.utcnow().replace(months=-3).datetime.date()
+        now = utc = arrow.utcnow().replace(months=-3)
         order= Order.objects.create(**{
             "condo": condo_user.condo,
-            "order_type": "d",
+            "order_type": "m",
             'order_date':  arrow.now().replace(months=-10).format(fmt='YYYY-MM-DD', locale='en_us'),
-            #"invoice_number": "123456789",
             "amount_gross": 20,
             "currency": currency,
             
         })
-        data= {
-            'invoice_type': 'm',
-            'invoice_date':now,
-            #'currency':currency.pk,
-            'amount_gross': 455.89,
-            'order':order.pk
+        invoice = order.create_invoice()
+        try:
+            invoice = order.create_invoice()
+            raise Error('No duplicate invtest_cant_post_for_month_with_monthly_invoiceoices per month allowed')
+        except IntegrityError as e:
+            pass
 
-        }  
-        response=self.client.post(url, data)
-        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-
-        data['invoice_date'] = arrow.get(now).replace(months=+1).datetime.date()
-        response=self.client.post(url, data)
-        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-
-        data['invoice_date'] = arrow.get(now).replace(months=+2).datetime.date()
-        response=self.client.post(url, data)
-        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-
-        data['amount_gross'] = 333.33
-        response=self.client.post(url, data)
-        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
     def test_cant_post_for_month_with_monthly_invoice(self):
         '''once a month has a monthly invoice, no invoices can be posted there'''
         condo_user = User.objects.get(username="condo_user")
         self.client.force_authenticate(user=condo_user)
-        url = reverse('invoice-list')
+        url = reverse('order-list')
         currency= Currency.objects.get(iso_code='PEN')
-        now = utc = arrow.utcnow().replace(months=-3).datetime.date()
-        order= Order.objects.create(**{
-            "condo": condo_user.condo,
+        #now = arrow.utcnow().replace(months=-3).datetime.date()
+        #order= Order.objects.create()
+        date_t= arrow.utcnow().replace(months=-10).format(fmt='YYYY-MM-DD', locale='en_us')
+        data= {
+            "condo": condo_user.condo.pk,
             "order_type": "m",
-            'order_date':  arrow.now().replace(months=-10).format(fmt='YYYY-MM-DD', locale='en_us'),
+            'order_date':  date_t,
             #"invoice_number": "123456789",
             "amount_gross": 20,
-            "currency": currency
-        })
-        data= {
-            'invoice_type': 'm',
-            'invoice_date':now,
-            'currency':currency.pk,
-            'amount_gross': 455.89,
-            'order':order.pk
-
-        }  
+            "currency": currency.pk,
+            'invoice_order': True
+        } 
         response=self.client.post(url, data)
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 
-        data['invoice_date'] = arrow.get(now).replace(months=+2).datetime.date()
-        response=self.client.post(url, data)
-        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-
-
-        data['invoice_type'] = 'd'
+        data2= {
+            "condo": condo_user.condo.pk,
+            "order_type": "d",
+            'order_date': date_t,
+            #"invoice_number": "123456789",
+            "amount_gross": 20,
+            "currency": currency.pk,
+            'invoice_order': True
+        } 
         response=self.client.post(url, data)
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
@@ -391,7 +436,7 @@ class ApiEndPointsTestCase(APITransactionTestCase, URLPatternsTestCase):
         currency= Currency.objects.get(iso_code='PEN')
         transaction_category= Category.objects.get(name="condo_payment")
         url = reverse('account_keeping:transaction-list', kwargs={'account_pk':account.pk})
-        invoice = Invoice.objects.get(invoice_number=123456789)
+        invoice = Invoice.objects.all().first()
 
         data ={
             'category':transaction_category.pk,
@@ -409,29 +454,21 @@ class ApiEndPointsTestCase(APITransactionTestCase, URLPatternsTestCase):
         '''Invoices can only be created by condos'''
         condo_user = User.objects.get(username="condo_user")
         self.client.force_authenticate(user=condo_user)
-        url = reverse('invoice-list')
+        url = reverse('order-list')
         currency= Currency.objects.get(iso_code='PEN')
-        order= Order.objects.create(**{
-            "condo": condo_user.condo,
+        data= {
+            "condo": condo_user.condo.pk,
             "order_type": "d",
             'order_date':  arrow.now().replace(months=-10).format(fmt='YYYY-MM-DD', locale='en_us'),
             #"invoice_number": "123456789",
             "amount_gross": 20,
-            "currency": currency
-        })
-        data= {
-            'invoice_type': 'd',
-            'invoice_date':timezone.now().date(),
-            'currency':currency.pk,
-            'amount_gross': 455.89,
-            'order':order.pk
-
-        }  
-        #condo case
-        response=self.client.post(url, data)
+            "currency": currency.pk
+        }
+        # #condo case
+        response=self.client.post(url, data, format= 'json')
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 
-        #resident case
+        # #resident case
         resident_user = User.objects.get(username="resident_user")
         self.client.force_authenticate(user=resident_user)
         response=self.client.post(url, data, format='json')
@@ -442,55 +479,64 @@ class ApiEndPointsTestCase(APITransactionTestCase, URLPatternsTestCase):
         '''Invoice monthly boundaries tested '''
         condo_user = User.objects.get(username="condo_user")
         self.client.force_authenticate(user=condo_user)
-        url = reverse('invoice-list')
+        url = reverse('order-list')
         currency= Currency.objects.get(iso_code='PEN')
-        first_date = arrow.utcnow().replace(months=-10).format(fmt='YYYY-MM-DD', locale='en_us'),
         first_invoice =Invoice.objects.all().first()
-        order= Order.objects.create(**{
-            "condo": condo_user.condo,
-            "order_type": "d",
-            'order_date':  arrow.now().replace(months=-10).format(fmt='YYYY-MM-DD', locale='en_us'),
-            #"invoice_number": "123456789",
-            "amount_gross": 20,
-            "currency": currency,
-            
-        })
         data= {
-            'invoice_type': 'd',
-            'invoice_date':arrow.get(first_invoice.invoice_date).format(fmt='YYYY-MM-DD', locale='en_us'),
-            #'currency':currency.pk,
-            "order":order.pk
-
+            'order_type': 'm',
+            'order_date':arrow.get(first_invoice.invoice_date).date().isoformat(),
+            'invoice_order':True,
+            'currency':currency.pk,
+            'condo':condo_user.condo.pk
         }  
         response=self.client.post(url, data)
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 
         #testing end of first month
         end_month = arrow.get(first_invoice.invoice_date).ceil('month').format(fmt='YYYY-MM-DD', locale='en_us')
-        data['invoice_date'] = end_month
-
+        data['order_date'] = end_month
         response=self.client.post(url, data)
-        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-
-
-        #add monthly invoice
-        data['invoice_type'] = 'm'
-        response=self.client.post(url, data)
-        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-
-        #attempting another invoice for this given month
-        data['invoice_type'] = 'w'
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        # attempting another invoice for this given month
         response=self.client.post(url, data)
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
-        #attempting first moment of following month
-        first_moment_following_month = arrow.get(first_invoice.invoice_date).replace(months=+1).floor('month').format(fmt='YYYY-MM-DD', locale='en_us')
-        data['invoice_date'] = first_moment_following_month
+        # # #attempting first moment of following month
+        first_moment_following_month = arrow.get(data['order_date']).shift(months=+1).floor('month').date().isoformat()
+        data['order_date'] = first_moment_following_month
         response=self.client.post(url, data)
-        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         #attempting first moment of following month fail
-        last_moment_last_month = arrow.get(first_invoice.invoice_date).replace(months=+1).floor('month').shift(seconds=-1).format(fmt='YYYY-MM-DD', locale='en_us')
+        last_moment_last_month = arrow.get(data['order_date']).shift(months=+1).floor('month').shift(seconds=-1).format(fmt='YYYY-MM-DD', locale='en_us')
         data['invoice_date'] = last_moment_last_month
         response=self.client.post(url, data)
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_invoice_cant_be_modified_unless_to_be_marked_as_payed(self):
+        '''Invoice can not be modified, unless to be marked as payed '''
+        condo_user = User.objects.get(username="condo_user")
+        self.client.force_authenticate(user=condo_user)
+        invoice = Invoice.objects.all().first()
+        url = reverse('invoice-detail',kwargs={'pk':invoice.pk})
+        response=self.client.patch(url, {'invoice_type': 'eo'})
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        response=self.client.patch(url, {'is_payed': True})
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        response=self.client.patch(url, {'is_payed': True})
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        
+    def test_invoice_cant_be_modified_once_marked_payed(self):
+        '''Invoices marked as payed cant be mofidied '''
+        condo_user = User.objects.get(username="condo_user")
+        self.client.force_authenticate(user=condo_user)
+        invoice = Invoice.objects.all().first()
+        url = reverse('invoice-detail',kwargs={'pk':invoice.pk})
+        response=self.client.patch(url, {'is_payed': True})
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        response=self.client.patch(url, {'is_payed': False})
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        #invoice_number='11'
+
+
+

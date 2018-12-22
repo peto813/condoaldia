@@ -4,7 +4,7 @@ from django.conf.urls import url, include
 from django.conf import settings
 from django.conf.urls.static import static
 from allauth.account.views import ConfirmEmailView
-from account_keeping.views import InvoiceViewSet
+from account_keeping.views import InvoiceViewSet, OrderViewSet
 from rest_framework.routers import DefaultRouter
 from django.conf.urls import (
     handler400, handler403, handler404, handler500
@@ -12,7 +12,7 @@ from django.conf.urls import (
 
 router= DefaultRouter()
 router.register(r'invoices', InvoiceViewSet, basename="invoice")
-
+router.register(r'orders', OrderViewSet, basename="order")
 urlpatterns = [
     path('admin/', admin.site.urls),
     #path('api-auth/', include('rest_framework.urls')),

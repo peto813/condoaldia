@@ -4,6 +4,7 @@ Models for the account_keeping app.
 TODO: Add lazy_trans and docstrings
 
 """
+import uuid, arrow
 from datetime import date
 from decimal import Decimal
 
@@ -126,7 +127,7 @@ class InvoiceManager(models.Manager):
 
 @python_2_unicode_compatible
 class Invoice( models.Model):
-    order = models.ForeignKey('Order', on_delete=models.CASCADE, null = False, default = None)
+    order = models.OneToOneField('Order', on_delete=models.CASCADE, null = False, default = None)
     is_payed = models.BooleanField(default= False)
 
     created= models.DateTimeField(auto_now_add= True)
@@ -145,130 +146,16 @@ class Invoice( models.Model):
         (INVOICE_TYPES['monthly'], 'monthly'),
         (INVOICE_TYPES['extra-ordinary'], 'extra-ordinary')
     ]
-    # customer = models.ForeignKey(User, on_delete=models.PROTECT, null= True)
     condo = models.ForeignKey(Condo, on_delete =models.PROTECT, null= False, default = None, related_name = 'invoices')
-    # #draft = models.ForeignKey('InvoiceDraft', on_delete= models.PROTECT, null= True)
     invoice_type = models.CharField(
-        max_length=1,
+        max_length=2,
         choices=INVOICE_TYPE_CHOICES,
         verbose_name=_('Invoice type'),
     )
 
-
-
-    invoice_number = models.CharField(
-        max_length=256,
-        verbose_name=_('Invoice No.'),
-        blank=True,
-    )
-
-    # description = models.TextField(
-    #     verbose_name=_('Description'),
-    #     blank=True,
-    # )
-
-    # currency = models.ForeignKey(
-    #     'currency_history.Currency',
-    #     related_name='invoices',
-    #     verbose_name=_('Currency'),
-    #     on_delete = models.PROTECT
-    # )
-
-    # amount_net = models.DecimalField(
-    #     max_digits=18,
-    #     decimal_places=10,
-    #     default=0,
-    #     blank=True,
-    #     verbose_name=_('Amount net'),
-    # )
-
-    # vat = models.DecimalField(
-    #     max_digits=14,
-    #     decimal_places=10,
-    #     default=0,
-    #     verbose_name=_('Sales tax'),
-    #     help_text=_("sales tax")
-    # )
-
-    # amount_gross = models.DecimalField(
-    #     max_digits=18,
-    #     decimal_places=10,
-    #     default=0,
-    #     blank=True,
-    #     verbose_name=_('Amount gross'),
-    # )
-
-    # value_net = models.DecimalField(
-    #     max_digits=18,
-    #     decimal_places=10,
-    #     default=0,
-    #     verbose_name=_('Value net'),
-    # )
-
-    # value_gross = models.DecimalField(
-    #     max_digits=18,
-    #     decimal_places=10,
-    #     default=0,
-    #     verbose_name=_('Value gross'),
-    # )
-
-    # payment_date = models.DateField(
-    #     verbose_name=_('Payment date'),
-    #     blank=True,
-    #     null=True,
-    # )
-
-    # pdf = models.FileField(
-    #     upload_to='invoice_files',
-    #     verbose_name=_('PDF'),
-    #     blank=True, null=True,
-    # )
-
-    # objects = InvoiceManager()
-
-    # class Meta:
-    #     ordering = ['-invoice_date', '-pk']
-    #     verbose_name = _('Invoice')
-    #     verbose_name_plural = _('Invoices')
-
-    # def __str__(self):
-    #     if self.invoice_number:
-    #         return self.invoice_number
-    #     return '{0} - {1}'.format(self.invoice_date,
-    #                               self.get_invoice_type_display())
-
-    # def notify_client(self):
-    #     NotImplementedError('Method not implemented')
-
-    # def save(self, *args, **kwargs):
-    #     self.set_amount_fields()
-    #     self.set_value_fields('invoice_type')
-    #     return super().save(*args, **kwargs)
-
-    # @property
-    # def balance(self):
-    #     if not self.transactions.all():
-    #         return 0 - self.amount_net
-
-    #     total = 0
-    #     # Convert amounts
-    #     for currency in Currency.objects.all():
-    #         # Get transactions for each currency
-    #         transactions = self.transactions.filter(currency=currency)
-    #         if not transactions:
-    #             continue
-
-    #         if currency == self.currency:
-    #             rate = 1
-    #         else:
-    #             rate = Decimal(CurrencyRateHistory.objects.filter(
-    #                 rate__from_currency=currency,
-    #                 rate__to_currency=self.currency,
-    #             )[0].value)
-    #         total += rate * transactions.aggregate(
-    #             models.Sum('amount_net'))['amount_net__sum']
-    #     return total - self.amount_net
-
+    invoice_number=models.UUIDField(default=uuid.uuid4, editable=False, unique=True)
+    def __str__(self):
+        return str(self.invoice_number)
 
 @python_2_unicode_compatible
 class Payee(models.Model):
@@ -492,18 +379,6 @@ class Transaction(AmountMixin, models.Model):
         return super().save(*args, **kwargs)
 
 
-# class InvoiceDraft(Invoice, AmountMixin):
-#     status = models.CharField()
-
-# class InvoiceDraftDetails(models.Model, AmountMixin):
-#     '''Individual details in for the invoice drafts'''
-#     #status = models.CharField()
-#     draft = models.ForeignKey(InvoiceDraft, on_delete=models.CASCADE, null = False)
-
-
-
-
-
 class Order(models.Model, AmountMixin):
     ORDER_TYPES = {
         'withdrawal': 'w',
@@ -523,7 +398,7 @@ class Order(models.Model, AmountMixin):
         ('i','Invoiced',),
     )
 
-    status = models.CharField(max_length= 10, choices= ORDER_CHOICES)
+    status = models.CharField(max_length= 10, choices= ORDER_CHOICES, default='a')
     customer = models.ForeignKey(User, on_delete=models.PROTECT, null= True)
     condo = models.ForeignKey(Condo, on_delete =models.PROTECT, null= False, default = None, related_name = 'orders')
     #payed = models.BooleanField(default= False)
@@ -616,10 +491,9 @@ class Order(models.Model, AmountMixin):
         verbose_name_plural = _('Orders')
 
     def __str__(self):
-        if self.invoice_number:
-            return self.invoice_number
-        return '{0} - {1}'.format(self.invoice_date,
-                                  self.get_invoice_type_display())
+        if hasattr(self, 'invoice'):
+            return str(self.invoice.invoice_number)
+        return str(self.id)
 
     def notify_client(self):
         NotImplementedError('Method not implemented')
@@ -627,7 +501,23 @@ class Order(models.Model, AmountMixin):
     def save(self, *args, **kwargs):
         self.set_amount_fields()
         self.set_value_fields('order_type')
+        if hasattr(self, 'invoice'):
+            if self.invoice:
+
+                self.status='i'
         return super().save(*args, **kwargs)
+
+    def create_invoice(self):
+        data_obj = {
+            'order' :self,
+            'invoice_date': self.order_date,
+            'condo':self.condo,
+            'invoice_type':self.order_type
+        }
+        #self.invoice = 
+        invoice = Invoice.objects.create(**data_obj)
+        self.save()
+        return invoice
 
     @property
     def balance(self):

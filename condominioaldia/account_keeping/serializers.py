@@ -63,6 +63,35 @@ class AccountSerializer(serializers.ModelSerializer):
 		account.save()
 		return account
 
+class OrderSerializer(serializers.ModelSerializer):
+	invoice_order = serializers.BooleanField(
+		label=_('Mark order as invoiced?'),
+		initial=False,
+		required=False,
+		#allow_null= False
+	)
+	class Meta:
+		#fields = ['user','name', 'account_number','routing_number','currency', 'initial_amount', 'total_amount', 'active']
+		fields ='__all__'
+		model  = Order
+		#read_only_fields = ['account','value_net', 'value_gross']
+
+	def create(self, validated_data, *args, **kwargs):
+		invoice_order=validated_data.pop('invoice_order', None)
+		instance =super().create(validated_data, *args, **kwargs)
+		if invoice_order:
+			instance.create_invoice()
+		# print(instance.invoice.invoice_type)
+		# print(instance.invoice.invoice_date)
+		return instance
+
+	def update(self, instance, validated_data):
+		instance = super().update(instance, *args, **kwargs)
+		invoice_order=validated_data.pop('invoice_order', None)
+		if invoice_order:
+			instance.create_invoice()
+		return instance
+
 class TransactionSerializer(serializers.ModelSerializer):
 	# user=serializers.HyperlinkedIdentityField(
 	# 	view_name='user-detail', read_only= True
@@ -88,6 +117,7 @@ class TransactionSerializer(serializers.ModelSerializer):
 			if instance.invoice and mark_invoice:
 				# Set the payment date on related invoice
 				instance.invoice.payment_date = instance.transaction_date
+				instance.invoice.is_payed = mark_invoice
 				instance.invoice.save()
 		return instance
 
@@ -104,3 +134,9 @@ class InvoiceSerializer(serializers.ModelSerializer):
 		fields ='__all__'
 		model  = Invoice
 		read_only_fields = ['account','value_net', 'value_gross']
+
+	def update(self, invoice, validated_data):
+		invoice.is_payed = validated_data.get('is_payed', invoice.is_payed)
+		invoice.invoice_type = validated_data.get('invoice_type', invoice.invoice_type)
+		invoice.save()
+		return invoice
