@@ -10,7 +10,7 @@ app_name= "account_keeping"
 #router = DefaultRouter()
 router= routers.DefaultRouter()
 router.register(r'', views.BankAccountsViewSet, basename="account"),
-#router.register(r'invoices', views.InvoiceViewSet, basename="invoice")
+router.register(r'invoices', views.InvoiceViewSet, basename="invoice")
 #router.register(r'user', views.UserViewSet)#user-detai
 
 

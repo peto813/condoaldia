@@ -115,7 +115,7 @@ DATABASES = {
         'PORT': 5432,
     }
 }
-
+TEST_RUNNER = "redgreenunittest.django.runner.RedGreenDiscoverRunner"
 
 # Password validation
 # https://docs.djangoproject.com/en/2.1/ref/settings/#auth-password-validators

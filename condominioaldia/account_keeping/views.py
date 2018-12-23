@@ -26,7 +26,7 @@ from . import model_resources
 from .freckle_api import get_unpaid_invoices_with_transactions
 from .utils import get_date as d
 
-from . serializers import AccountSerializer, TransactionSerializer, InvoiceSerializer
+from . serializers import AccountSerializer, TransactionSerializer, InvoiceSerializer, OrderSerializer
 DEPOSIT = models.Transaction.TRANSACTION_TYPES['deposit']
 WITHDRAWAL = models.Transaction.TRANSACTION_TYPES['withdrawal']
 from .permissions import IsCondoOrReadOnly
@@ -43,6 +43,12 @@ class CreateListRetrieveViewSet(mixins.CreateModelMixin,
                                 mixins.ListModelMixin,
                                 mixins.RetrieveModelMixin,
                                 viewsets.GenericViewSet):
+    pass
+
+class ListRetrieveViewSet(
+        mixins.ListModelMixin,
+        mixins.RetrieveModelMixin,
+        viewsets.GenericViewSet):
     pass
 
 # class UserViewSet(mixins.RetrieveModelMixin,viewsets.GenericViewSet):
@@ -695,20 +701,13 @@ class InvoiceCreateView(InvoiceMixin, LoginRequiredMixin, generic.CreateView):
 class InvoiceUpdateView(InvoiceMixin, LoginRequiredMixin, generic.UpdateView):
     pass
 
-class InvoiceViewSet(CreateListRetrieveViewSet, mixins.DestroyModelMixin, mixins.UpdateModelMixin):
-    queryset = models.Invoice.objects.all()
-    serializer_class = InvoiceSerializer
+class OrderViewSet(CreateListRetrieveViewSet, mixins.DestroyModelMixin, mixins.UpdateModelMixin):
+    queryset = models.Order.objects.all()
+    serializer_class = OrderSerializer
     permission_classes= (IsAuthenticated, IsCondoOrReadOnly,)
 
-    # def get_queryset(self):
-    #     if self.request.user.is_condo:
-    #         return self.queryset.filter(user= self.request.user)
-    #     elif self.request.user.is_resident:
-    #         return self.queryset.filter(user__condo__inmuebles__resident=self.request.user.resident)
-    #     elif self.request.user.is_staff or self.request.user.is_superuser:
-    #         return self.queryset
-
     def create(self, request, *args, **kwargs):
+        
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         try:
@@ -716,34 +715,41 @@ class InvoiceViewSet(CreateListRetrieveViewSet, mixins.DestroyModelMixin, mixins
             this addresses a database UNIQUE INDEX that checks if 
             there are existing monthly invoices prior to saving a monthly invoice
             '''
-            self.perform_create(serializer)
+            instance = self.perform_create(serializer)
+
         except IntegrityError as e:
             return Response(e.args[0], status=status.HTTP_400_BAD_REQUEST)
         except InternalError as e:
             return Response(e.args[0], status=status.HTTP_400_BAD_REQUEST)
-
-        # try:
-        #     '''
-        #     this addresses a database pre save trigger that checks if 
-        #     there are existing monthly invoices prior to saving an invoice
-        #     '''
-        #     self.perform_create(serializer)
-        # except InternalError as e:
-        #     return Response(e.args[0], status=status.HTTP_400_BAD_REQUEST)
-
-
-        self.perform_create(serializer)
-
-
         headers = self.get_success_headers(serializer.data)
         return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
 
 
-    def perform_create(self, serializer):
-        serializer.save(condo= self.request.user.condo)
 
+class InvoiceViewSet(ListRetrieveViewSet, mixins.DestroyModelMixin, mixins.UpdateModelMixin):
+    queryset = models.Invoice.objects.all()
+    serializer_class = InvoiceSerializer
+    permission_classes= (IsAuthenticated, IsCondoOrReadOnly,)
 
+    def update(self, request, pk=None, *args, **kwargs):
+        partial = kwargs.pop('partial', False)
+        instance = self.get_object()
+        serializer = self.get_serializer(instance, data=request.data, partial=partial)
+        serializer.is_valid(raise_exception=True)
+        try:
+            self.perform_update(serializer)
+        except IntegrityError as e:
+            return Response(e.args[0], status=status.HTTP_400_BAD_REQUEST)
+        except InternalError as e:
+            return Response(e.args[0], status=status.HTTP_400_BAD_REQUEST)
+        
 
+        if getattr(instance, '_prefetched_objects_cache', None):
+            # If 'prefetch_related' has been applied to a queryset, we need to
+            # forcibly invalidate the prefetch cache on the instance.
+            instance._prefetched_objects_cache = {}
+
+        return Response(serializer.data)
 
 class TransactionMixin(object):
     model = models.Transaction
@@ -863,14 +869,6 @@ class TransactionViewSet(CreateListRetrieveViewSet, mixins.DestroyModelMixin, mi
         headers = self.get_success_headers(serializer.data)
         return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
  
-    # def perform_update(self, serializer):
-    #     try:
-    #         serializer.save()
-    #     except IntegrityError as e:
-    #         return Response(e.args[0], status=status.HTTP_400_BAD_REQUEST)
-    #     except InternalError as e:
-    #         return Response(e.args[0], status=status.HTTP_400_BAD_REQUEST)
-
     def update(self, request, account_pk=None, *args, **kwargs):
         partial = kwargs.pop('partial', False)
         instance = self.get_object()
@@ -883,7 +881,6 @@ class TransactionViewSet(CreateListRetrieveViewSet, mixins.DestroyModelMixin, mi
         except InternalError as e:
             return Response(e.args[0], status=status.HTTP_400_BAD_REQUEST)
         
-        headers = self.get_success_headers(serializer.data)
         if getattr(instance, '_prefetched_objects_cache', None):
             # If 'prefetch_related' has been applied to a queryset, we need to
             # forcibly invalidate the prefetch cache on the instance.
