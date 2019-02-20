@@ -191,6 +191,20 @@ class CondoTestCase(APITestCase):
         inmueble= Inmueble.objects.create(condo= condo, share= 0.5, initial_balance = 0, name= '1-a')
         currency = Currency.objects.create(iso_code='USD',title='bolivar soberano', abbreviation= 'Bs')
 
+    # def test_condo_can_bill_properties(self):
+    #     """Condo can create monthly bill for every property"""
+    #     user = User.objects.get(email="12@gmail.com")
+    #     condo = Condo.objects.get(user=user)
+    #     condo.create_monthly_bill()
+    #     # currency = Currency.objects.get(iso_code='USD')
+    #     # data ={
+    #     #     'name':'usd account',
+    #     #     'account_number': '01340262142623025724',
+    #     #     'currency': currency
+    #     # }
+    #     # condo.create_bank_account(data)
+
+
     def test_condo_can_get_share_sum(self):
         """Condo can get sum of all of its property shares"""
         user = User.objects.get(email="12@gmail.com")
@@ -245,14 +259,14 @@ class CondoTestCase(APITestCase):
         }
         order= condo.orders.create(**order_data)
         #add a monthly invoice and check new expected response
-        invoice = condo.invoices.create(
+        invoice = condo.user.invoices.create(
             invoice_date = timezone.now().date(),
             order = order,
             invoice_type= 'm',
-            condo = condo
+            user = condo.user
         )
         current_period = condo.get_current_billing_period()
-        latest_monthly_invoice = condo.invoices.all().latest('invoice_date')
+        latest_monthly_invoice = condo.user.invoices.all().latest('invoice_date')
         next_monthly_invoice_date=arrow.get(latest_monthly_invoice.invoice_date).ceil('month').replace(seconds=+1)
         expected_response2= {
             'from' :next_monthly_invoice_date.floor('month').datetime,

@@ -146,7 +146,7 @@ class Invoice( models.Model):
         (INVOICE_TYPES['monthly'], 'monthly'),
         (INVOICE_TYPES['extra-ordinary'], 'extra-ordinary')
     ]
-    condo = models.ForeignKey(Condo, on_delete =models.PROTECT, null= False, default = None, related_name = 'invoices')
+    user = models.ForeignKey(User, on_delete =models.PROTECT, null= False, default = None, related_name = 'invoices')
     invoice_type = models.CharField(
         max_length=2,
         choices=INVOICE_TYPE_CHOICES,
@@ -399,7 +399,7 @@ class Order(models.Model, AmountMixin):
     )
 
     status = models.CharField(max_length= 10, choices= ORDER_CHOICES, default='a')
-    customer = models.ForeignKey(User, on_delete=models.PROTECT, null= True)
+    customer = models.ForeignKey(User, on_delete=models.PROTECT, null= False, default= None)
     condo = models.ForeignKey(Condo, on_delete =models.PROTECT, null= False, default = None, related_name = 'orders')
     #payed = models.BooleanField(default= False)
     #draft = models.ForeignKey('InvoiceDraft', on_delete= models.PROTECT, null= True)
@@ -503,7 +503,6 @@ class Order(models.Model, AmountMixin):
         self.set_value_fields('order_type')
         if hasattr(self, 'invoice'):
             if self.invoice:
-
                 self.status='i'
         return super().save(*args, **kwargs)
 
@@ -511,7 +510,8 @@ class Order(models.Model, AmountMixin):
         data_obj = {
             'order' :self,
             'invoice_date': self.order_date,
-            'condo':self.condo,
+            #'condo':self.condo,
+            'user':self.condo.user,
             'invoice_type':self.order_type
         }
         #self.invoice = 

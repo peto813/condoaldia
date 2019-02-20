@@ -31,6 +31,7 @@ ALLOWED_HOSTS = []
 # Application definition
 
 INSTALLED_APPS = [
+    'django_jenkins',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.sites',
@@ -44,6 +45,7 @@ INSTALLED_APPS = [
     'allauth.socialaccount',
     'rest_framework.authtoken',
     'rest_auth',
+    'corsheaders',
     'rest_auth.registration',
     'djmoney',
     'rolepermissions',
@@ -56,12 +58,18 @@ INSTALLED_APPS = [
     'condo_manager',
 ]
 
+JENKINS_TASKS = (
+ 'django_jenkins.tasks.run_pep8',
+ 'django_jenkins.tasks.run_pyflakes'
+)
+
 SITE_ID = 1
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
+    'corsheaders.middleware.CorsMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
@@ -226,3 +234,8 @@ AUTHENTICATION_BACKENDS = (
 )
 
 CURRENCY_SERVICE= 'fixer'
+
+
+#CONDITIONAL SETTING
+if DEBUG:
+    CORS_ORIGIN_ALLOW_ALL= True

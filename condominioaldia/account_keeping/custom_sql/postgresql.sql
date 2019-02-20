@@ -18,9 +18,12 @@ $$ LANGUAGE SQL IMMUTABLE;
 that restrics the amount of monthly invoices to one per month
  */
 CREATE UNIQUE INDEX IF NOT EXISTS uniqueMonthlyInvoicePerMonth
-ON account_keeping_invoice (condo_id, YEAR(account_keeping_invoice.invoice_date), MONTH(account_keeping_invoice.invoice_date))
+ON account_keeping_invoice (user_id, YEAR(account_keeping_invoice.invoice_date), MONTH(account_keeping_invoice.invoice_date))
 WHERE invoice_type = 'm';
 
+CREATE UNIQUE INDEX IF NOT EXISTS uniqueMonthlyOrderPerMonth
+ON account_keeping_order (customer_id, YEAR(account_keeping_order.order_date), MONTH(account_keeping_order.order_date))
+WHERE order_type = 'm';
 
 /* This script creates a constraint in the transactions table that prohibits
 posting at dates later than the present day.
@@ -48,11 +51,11 @@ BEGIN
 	-- IF (TG_OP = 'INSERT') THEN
 	    IF EXISTS(
 	        SELECT * FROM account_keeping_invoice
-	        WHERE condo_id=new.condo_id
+	        WHERE user_id=new.user_id
 	        AND invoice_type='m'
 	        AND YEAR(invoice_date) = YEAR(new.invoice_date)
 	        AND MONTH(invoice_date)= MONTH(new.invoice_date)
-	      ) IS TRUE AND new.invoice_type <> 'm' THEN 
+	      ) IS TRUE THEN 
 	      RAISE EXCEPTION 'This is an invalid date, this monthly period is closed';
 	    END IF;
 	  RETURN NEW;
@@ -72,7 +75,7 @@ BEGIN
 	      RAISE EXCEPTION 'This invoice has been payed, update prohibited';
 	    ELSIF (
 	    	--IF MODIFYING 
-	    	old.condo_id <>new.condo_id OR
+	    	old.user_id <>new.user_id OR
 	    	old.invoice_type <>new.invoice_type OR
 	    	old.invoice_number <>new.invoice_number OR
 	    	old.invoice_date <>new.invoice_date OR
@@ -132,7 +135,7 @@ BEGIN
 	    IF EXISTS(
 	        SELECT condo_manager_condo.id, account_keeping_invoice.invoice_type, YEAR(account_keeping_invoice.invoice_date), MONTH(account_keeping_invoice.invoice_date)
 	        FROM account_keeping_invoice
-	        INNER JOIN condo_manager_condo ON condo_manager_condo.id= account_keeping_invoice.condo_id
+	        INNER JOIN condo_manager_condo ON condo_manager_condo.user_id= account_keeping_invoice.user_id
 	       	WHERE invoice_type = 'm'
 	      ) IS TRUE THEN 
 	      RAISE EXCEPTION 'This is an invalid date, this monthly period is closed';
@@ -142,7 +145,7 @@ BEGIN
 	    IF EXISTS(
 	        SELECT condo_manager_condo.id, account_keeping_invoice.invoice_type, YEAR(account_keeping_invoice.invoice_date), MONTH(account_keeping_invoice.invoice_date)
 	        FROM account_keeping_invoice
-	        INNER JOIN condo_manager_condo ON condo_manager_condo.id= account_keeping_invoice.condo_id
+	        INNER JOIN condo_manager_condo ON condo_manager_condo.user_id= account_keeping_invoice.user_id
 	       	WHERE invoice_type = 'm'
 	      ) IS TRUE THEN 
 	      RAISE EXCEPTION 'This is an invalid date, this monthly period is closed';

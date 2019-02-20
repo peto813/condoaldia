@@ -68,21 +68,16 @@ class OrderSerializer(serializers.ModelSerializer):
 		label=_('Mark order as invoiced?'),
 		initial=False,
 		required=False,
-		#allow_null= False
 	)
 	class Meta:
-		#fields = ['user','name', 'account_number','routing_number','currency', 'initial_amount', 'total_amount', 'active']
 		fields ='__all__'
 		model  = Order
-		#read_only_fields = ['account','value_net', 'value_gross']
 
 	def create(self, validated_data, *args, **kwargs):
 		invoice_order=validated_data.pop('invoice_order', None)
 		instance =super().create(validated_data, *args, **kwargs)
 		if invoice_order:
 			instance.create_invoice()
-		# print(instance.invoice.invoice_type)
-		# print(instance.invoice.invoice_date)
 		return instance
 
 	def update(self, instance, validated_data):
@@ -93,25 +88,37 @@ class OrderSerializer(serializers.ModelSerializer):
 		return instance
 
 class TransactionSerializer(serializers.ModelSerializer):
-	# user=serializers.HyperlinkedIdentityField(
-	# 	view_name='user-detail', read_only= True
-	# )
-	#slug= serializers.SlugField(required= False)
+
 	mark_invoice = serializers.BooleanField(
 		label=_('Mark invoice as paid?'),
 		initial=False,
 		required=False,
-		#allow_null= False
 	)
+	billing_choices= (
+		('ba', _('bill all')),
+		('bl', _('bill listed')),
+	)
+
+	bill_mode = serializers.ChoiceField(choices= billing_choices, allow_blank = True, required = False)
+
 	class Meta:
-		#fields = ['user','name', 'account_number','routing_number','currency', 'initial_amount', 'total_amount', 'active']
 		fields ='__all__'
 		model  = Transaction
 		read_only_fields = ['account','value_net', 'value_gross']
 
+	def validate(self, vd):
+		bill_mode= vd.pop('bill_mode', None)
+		if vd.get('transaction_type') =='w' and not bill_mode:
+			raise serializers.ValidationError(_('Please state billing mode.'))
+		if bill_mode:
+			if bill_mode=='bl' and not vd.get('bill_list'):
+				raise serializers.ValidationError(_('You must provide a list of properties to be billed.'))
+		return vd
 
 	def create(self, vd):
 		mark_invoice=vd.pop('mark_invoice', None)
+		request= self.context.get('request')
+		
 		instance= Transaction.objects.create(**vd)
 		if hasattr(instance, 'invoice'):
 			if instance.invoice and mark_invoice:
@@ -119,13 +126,18 @@ class TransactionSerializer(serializers.ModelSerializer):
 				instance.invoice.payment_date = instance.transaction_date
 				instance.invoice.is_payed = mark_invoice
 				instance.invoice.save()
-		return instance
 
-	# def __init__(self, *args, **kwargs):
-	# 	super().__init__(*args, **kwargs)
-	# 	self.fields['payee'].help_text = _(
-	# 		'<a href="{}">Add a payee</a>').format(
-	# 	reverse('account_keeping:account_keeping_payee_create'))
+		bill_mode=vd.pop('bill_mode', None)
+
+		if bill_mode and transaction_type=='w':
+			condo = request.user.condo
+			if bill_mode=='ba':
+				condo.bill_property(instance)
+			elif bill_mode=='bl':
+				raise NotImplementedError
+				bill_list = vd.pop('bill_list')
+				condo.bill_property(instance, bill_list)
+		return instance
 
 class InvoiceSerializer(serializers.ModelSerializer):
 	condo = serializers.PrimaryKeyRelatedField( read_only= True)

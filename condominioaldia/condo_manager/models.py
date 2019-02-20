@@ -130,7 +130,7 @@ class Condo(models.Model):
 	country =  CountryField(null= False, blank = True)
 
 	def get_current_billing_period(self):
-		monthly_invoices = self.invoices.filter( invoice_type= 'm', condo = self)
+		monthly_invoices = self.user.invoices.filter( invoice_type= 'm', user = self.user)
 		if monthly_invoices.exists():
 			next_monthly_invoice_date = arrow.get(monthly_invoices[0].invoice_date).ceil('month').replace(seconds=+1)
 			billing_period= {
@@ -155,9 +155,55 @@ class Condo(models.Model):
 		self.save()
 		self.send_condo_approved_email()
 
-	def bill_property(self):
-		pass
+	def bill_property(self, transaction, bill_list = None):
+		if self.get_share_sum()<0.995:
+			raise ValidationError({'share': _('Total condo shares can not be less than 0.995 (99.5%%).')})
+		from account_keeping.models import Order, OrderDetails
+		transaction_amount = transaction.amount_net
+		inmuebles = self.inmuebles.all()
 
+		if bill_list:
+			inmuebles = inmuebles.filter(pk__in=bill_list)
+		
+		for property in inmuebles:
+			share = property.share
+			share_amount = (share*transaction_amount) if not bill_list else (transaction_amount/inmuebles.count())
+			order_data= {
+				'condo':self,
+				'order_type':'m',
+				'customer':property.resident.user,
+				'currency' :transaction.account.currency
+			}
+			order, created = Order.objects.get_or_create(**order_data)
+			if created:
+				order.order_date =transaction.transaction_date
+				order.description =_('monthly bill orders')
+				order.currency = transaction.account.currency
+				order.save()
+
+			order_detail = OrderDetails.objects.create(
+				item_date= transaction.transaction_date,
+				description =transaction.description,
+				amount_gross = share_amount,
+				order=order
+			)
+		return order
+
+
+
+	# def create_monthly_bill(self):
+	# 	from account_keeping.models import Transaction
+	# 	period = self.get_current_billing_period()
+	# 	#get all transactions
+	# 	transactions = Transaction.objects.filter(account__user= self.user,
+	# 		transaction_date__range=( period['from'], period['to']) )
+	# 	#get properties
+	# 	#print(dir(self))
+	# 	#total_expenses = transaction.objects.filter(transaction_type='w').annotate(total_expenses=Sum('book__pages'))
+	# 	for item in self.inmuebles.all():
+	# 		print(item)
+
+		#invoices = Invoice.objects.filter(user= self.user)
 
 	def send_condo_approved_email(self):
 		site= Site.objects.get_current().domain

@@ -31,6 +31,6 @@ class IsCondoOrReadOnly(permissions.BasePermission):
 			elif view.get_view_name()=='Invoice List':
 				return request.user.condo == obj.condo
 			elif view.get_view_name()=='Invoice Instance':
-				return request.user.condo == obj.condo
+				return request.user == obj.user
 			return obj.user.condo == request.user.condo
 		return False
