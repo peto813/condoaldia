@@ -13,6 +13,8 @@ from rest_framework.authtoken.models import Token
 from rolepermissions.checkers import has_permission, has_role
 from django.conf import settings
 from django.core import mail
+from rest_framework.routers import DefaultRouter
+from condo_manager import views
 
 
 
@@ -28,14 +30,16 @@ class ApiEndPointsTestCase(APITestCase, URLPatternsTestCase):
         resident= Resident.objects.create(user= resident_user)
         inmueble= Inmueble.objects.create(condo= condo, share= 0.5, initial_balance = 0,  name= '1-a')
         #condo.inmuebles.add(inmueble)
-
+    router= DefaultRouter()
+    router.register(r'user', views.UserViewSet)
     urlpatterns = [
         #path('api-auth/', include('rest_framework.urls')),
         #path('accounts/', include('allauth.urls')),
         path('condos/', include('condo_manager.urls')),
         #path('condos/', include('account_keeping.urls')),
         path('condos/registration/', include('rest_auth.registration.urls')),
-        #path('condos/', include('rest_auth.urls')),
+        #/users/password/reset/
+        path('users/',  include(router.urls))
     ]
 
     def tearDown(self):
@@ -50,9 +54,9 @@ class ApiEndPointsTestCase(APITestCase, URLPatternsTestCase):
         response=self.client.get(url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
-    # def test_confirm_email(self):
-    #     key 'alksjdlkajsdl'
-    #     url = reverse('condo_manager:confirm-email', kwargs={'key':key})
+    def test_user_can_request_pwd_reset(self):
+        '''User can successfully request a password reset via api endpoint '''
+        pass
 
     #condo
     def test_post_condo_registration(self):

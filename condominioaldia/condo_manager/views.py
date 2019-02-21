@@ -23,6 +23,10 @@ from condo_manager.permissions import *
 
 User = get_user_model()
 
+class CustomPwdResetView(APIView):
+	'''empty filler view for rest auth password reset endpoint'''
+	pass
+
 class CreateListRetrieveViewSet(mixins.CreateModelMixin,
                                 mixins.ListModelMixin,
                                 mixins.RetrieveModelMixin,
