@@ -251,7 +251,7 @@ class CondoTestCase(APITestCase):
         assert expected_response == current_period
         assert 'from' and 'to' in current_period
         currency = Currency.objects.get(iso_code='USD')
-
+        
         order_data= {
             "condo": condo,
             "order_type": "d",
@@ -259,7 +259,8 @@ class CondoTestCase(APITestCase):
             #"order_number": "123456789",
             "description": "you are here, with the in-voice, get it?",
             "amount_gross": 20,
-            "currency": currency
+            "currency": currency,
+            "customer_id":1
         }
         order= condo.orders.create(**order_data)
         #add a monthly invoice and check new expected response
