@@ -260,7 +260,7 @@ class CondoTestCase(APITestCase):
             "description": "you are here, with the in-voice, get it?",
             "amount_gross": 20,
             "currency": currency,
-            "customer_id":1
+            "customer_id":user.id
         }
         order= condo.orders.create(**order_data)
         #add a monthly invoice and check new expected response

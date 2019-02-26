@@ -45,7 +45,8 @@ class OrderTestCase(APITransactionTestCase):
             "order_type": "m",
             'order_date':  arrow.now().replace(months=-10).format(fmt='YYYY-MM-DD', locale='en_us'),
             "amount_gross": 20,
-            "currency": currency
+            "currency": currency,
+            'customer_id':condo_user.id
         })
         transaction_category = Category.objects.create(name='condo_payment')
 
@@ -179,7 +180,8 @@ class OrderTestCase(APITransactionTestCase):
             "order_type": "m",
             'order_date':  arrow.now().replace(months=-10).format(fmt='YYYY-MM-DD', locale='en_us'),
             "amount_gross": 20,
-            "currency": currency
+            "currency": currency,
+            'customer_id':condo.user.id
         })
         transaction_category = Category.objects.create(name='condo_payment')
 
@@ -241,7 +243,8 @@ class InvoiceTestCase(APITransactionTestCase):
             "order_type": "d",
             'order_date':  arrow.now().replace(months=-10).format(fmt='YYYY-MM-DD', locale='en_us'),
             "amount_gross": 20,
-            "currency": currency
+            "currency": currency,
+            'customer_id':condo_user.id
         })
         invoice = order.create_invoice()
         #invoiced
@@ -302,7 +305,8 @@ class ApiEndPointsTestCase(APITransactionTestCase, URLPatternsTestCase):
             'order_date':  arrow.now().replace(months=-10).format(fmt='YYYY-MM-DD', locale='en_us'),
             #"invoice_number": "123456789",
             "amount_gross": 20,
-            "currency": currency
+            "currency": currency,
+            'customer_id':condo_user.id
         })
 
         invoice_data={
@@ -430,7 +434,7 @@ class ApiEndPointsTestCase(APITransactionTestCase, URLPatternsTestCase):
             #"invoice_number": "123456789",
             "amount_gross": 20,
             "currency": currency,
-            
+            "customer_id": condo_user.id
         })
         invoice_data={
             "user": condo_user,
@@ -456,7 +460,7 @@ class ApiEndPointsTestCase(APITransactionTestCase, URLPatternsTestCase):
             #"invoice_number": "123456789",
             "amount_gross": 20,
             "currency": currency,
-            
+            "customer_id":condo_user.id
         })
         invoice_data={
             "user": condo_user,
@@ -595,12 +599,12 @@ class ApiEndPointsTestCase(APITransactionTestCase, URLPatternsTestCase):
             'order_date':  arrow.now().replace(months=-10).format(fmt='YYYY-MM-DD', locale='en_us'),
             "amount_gross": 20,
             "currency": currency,
+            'customer_id':condo_user.id
             
         })
         invoice = order.create_invoice()
         try:
             invoice = order.create_invoice()
-            #raise Error('No duplicate invtest_cant_post_for_month_with_monthly_invoiceoices per month allowed')
         except InternalError as e:
             pass
 

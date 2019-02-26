@@ -401,8 +401,6 @@ class Order(models.Model, AmountMixin):
     status = models.CharField(max_length= 10, choices= ORDER_CHOICES, default='a')
     customer = models.ForeignKey(User, on_delete=models.PROTECT, null= False, default= None)
     condo = models.ForeignKey(Condo, on_delete =models.PROTECT, null= False, default = None, related_name = 'orders')
-    #payed = models.BooleanField(default= False)
-    #draft = models.ForeignKey('InvoiceDraft', on_delete= models.PROTECT, null= True)
     order_type = models.CharField(
         max_length=1,
         choices=ORDER_TYPE_CHOICES,
@@ -414,12 +412,6 @@ class Order(models.Model, AmountMixin):
         null = True, 
         blank = True
     )
-
-    # invoice_number = models.CharField(
-    #     max_length=256,
-    #     verbose_name=_('Invoice No.'),
-    #     blank=True,
-    # )
 
     description = models.TextField(
         verbose_name=_('Description'),

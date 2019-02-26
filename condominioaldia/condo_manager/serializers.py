@@ -10,13 +10,26 @@ from .models import Condo, Inmueble, Resident
 from rolepermissions.roles import assign_role
 from django_countries.serializer_fields import CountryField
 from django_countries.serializers import CountryFieldMixin
+from rest_auth.serializers import PasswordResetSerializer
 
 User = get_user_model()
+class CustomPwdResetSerializer(PasswordResetSerializer):
+
+	def validate_email(self, value):
+        # Create PasswordResetForm with the serializer
+		email_exists = User.objects.filter(email = value).exists()
+		if not email_exists:
+			raise serializers.ValidationError(_("Invalid E-mail."))
+		self.reset_form = self.password_reset_form_class(data=self.initial_data)
+		if not self.reset_form.is_valid():
+			raise serializers.ValidationError(self.reset_form.errors)
+		return value
+
 
 class CustomRegisterSerializer(RegisterSerializer):
 	password1 = serializers.CharField(style={'input_type': 'password'},write_only=True, min_length = 8, allow_blank=False, trim_whitespace=True)
 	password2 = serializers.CharField(style={'input_type': 'password'},write_only=True, min_length = 8, allow_blank=False, trim_whitespace=True)
-	id_number = serializers.CharField()
+	#id_number = serializers.CharField()
 	id_proof = serializers.ImageField(required= True)
 	terms = serializers.BooleanField(required= True)
 	name = serializers.CharField()
@@ -39,7 +52,7 @@ class CustomRegisterSerializer(RegisterSerializer):
 	def save(self, request):
 		adapter = get_adapter()
 		user = adapter.new_user(request)
-		user.id_number = self.validated_data.get('id_number')
+		#user.id_number = self.validated_data.get('id_number')
 		user.save()
 		self.cleaned_data = self.get_cleaned_data()
 		adapter.save_user(request, user, self)

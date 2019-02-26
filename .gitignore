@@ -97,3 +97,4 @@ static_root/
 **/south_migrations/**
 !**/south_migrations
 !**/south_migrations/__init__.py
+~

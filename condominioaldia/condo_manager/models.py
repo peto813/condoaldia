@@ -23,7 +23,7 @@ from rolepermissions.checkers import has_permission, has_role
 from condominioaldia.roles import Condo as CondoRole, Resident as ResidentRole, Rentee as RenteeRole
 
 class User(AbstractUser):
-	id_number = models.CharField(max_length=100, verbose_name=_('Fiscal Number'), unique= True)
+	id_number = models.CharField(max_length=100, verbose_name=_('Fiscal Number'), unique= True, null = True, blank = True)
 	mobile=models.CharField( null= True, blank = True, max_length=15)
 	office=models.CharField( null= True, blank = True, max_length=15)
 	other=models.CharField( null= True, blank = True, max_length=15)

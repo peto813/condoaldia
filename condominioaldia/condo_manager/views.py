@@ -18,14 +18,40 @@ from rest_auth.app_settings import create_token
 from allauth.account import app_settings as allauth_settings
 from rest_framework.generics import ListCreateAPIView, DestroyAPIView
 from django.contrib.auth import get_user_model
-from condo_manager.serializers import  UserSerializer, CondoSerializer, InmuebleSerializer, ResidentSerializer
+from condo_manager.serializers import  UserSerializer, CondoSerializer, InmuebleSerializer, ResidentSerializer, CustomPwdResetSerializer
 from condo_manager.permissions import *
+from django.utils.translation import ugettext_lazy as _
+from rest_framework.generics import GenericAPIView
 
 User = get_user_model()
 
-class CustomPwdResetView(APIView):
+
+class CustomRegisterView(RegisterView):
+	def create(self, request, *args, **kwargs):
+		serializer = self.get_serializer(data=request.data)
+		if serializer.is_valid():
+			user = self.perform_create(serializer)
+			headers = self.get_success_headers(serializer.data)
+			return Response({'message':_('A verification link has been sent to %s' %(serializer.validated_data.get('email')))}, status=status.HTTP_201_CREATED,headers=headers)
+		return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+
+
+class CustomPwdResetView(GenericAPIView):
 	'''empty filler view for rest auth password reset endpoint'''
-	pass
+	def post(self, request, *args, **kwargs):
+		a
+		# Create a serializer with request.data
+		serializer = self.get_serializer(data=request.data)
+		serializer.is_valid(raise_exception=True)
+
+		serializer.save()
+		# Return the success message with OK HTTP status
+		return Response(
+			{"detail": _("Password reset e-mail has been sent.")},
+			status=status.HTTP_200_OK
+		)
 
 class CreateListRetrieveViewSet(mixins.CreateModelMixin,
                                 mixins.ListModelMixin,

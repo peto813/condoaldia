@@ -6,7 +6,7 @@ from django.conf.urls.static import static
 from allauth.account.views import ConfirmEmailView
 from account_keeping.views import InvoiceViewSet, OrderViewSet
 from rest_framework.routers import DefaultRouter
-from condo_manager.views import CustomPwdResetView
+from condo_manager.views import CustomPwdResetView, CustomRegisterView
 from django.conf.urls import (
     handler400, handler403, handler404, handler500
 )
@@ -15,16 +15,18 @@ router= DefaultRouter()
 router.register(r'invoices', InvoiceViewSet, basename="invoice")
 router.register(r'orders', OrderViewSet, basename="order")
 urlpatterns = [
+    path('users/password-reset/confirm/<slug:uidb64>/<slug:token>)/', CustomPwdResetView.as_view(), name='password_reset_confirm'),
+
     path('admin/', admin.site.urls),
     #path('api-auth/', include('rest_framework.urls')),
     #path('accounts/', include('allauth.urls')),
     path('condos/', include('condo_manager.urls', namespace='condo_manager')),
     path('condos/accounts/', include('account_keeping.urls', namespace='account_keeping')),
+    path('condos/registration/', CustomRegisterView.as_view(), name="rest_register"),
     path('condos/registration/', include('rest_auth.registration.urls')),
 
 
     #url(r'^password-reset/confirm/$',TemplateView.as_view(template_name="password_reset_confirm.html"),name='password-reset-confirm'),
-    path('users/password-reset/confirm/<slug:uidb64>/<slug:token>)/', CustomPwdResetView.as_view(),name='password_reset_confirm'),
     path('users/', include('rest_auth.urls')),
     path('condos/',  include(router.urls)),
 ]
