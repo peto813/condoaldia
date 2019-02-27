@@ -177,7 +177,8 @@ REST_AUTH_REGISTER_SERIALIZERS = {
 }
 REST_AUTH_SERIALIZERS ={
     'USER_DETAILS_SERIALIZER':'condo_manager.serializers.UserSerializer',
-    'PASSWORD_RESET_SERIALIZER':'condo_manager.serializers.CustomPwdResetSerializer'
+    'PASSWORD_RESET_SERIALIZER':'condo_manager.serializers.CustomPwdResetSerializer',
+    'TOKEN_SERIALIZER': 'condo_manager.serializers.customTokenSerializer'
 }
 # Internationalization
 # https://docs.djangoproject.com/en/2.1/topics/i18n/

@@ -25,6 +25,16 @@ from rest_framework.generics import GenericAPIView
 
 User = get_user_model()
 
+from rest_auth.views import LoginView
+
+
+class CustomLoginView(LoginView):
+	def get_response(self):
+		print(self.request.data)
+		orginal_response = super().get_response()
+		mydata = {"message": "some message", "status": "success"}
+		orginal_response.data.update(mydata)
+		return orginal_response
 
 class CustomRegisterView(RegisterView):
 	def create(self, request, *args, **kwargs):

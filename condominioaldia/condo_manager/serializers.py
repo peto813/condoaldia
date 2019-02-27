@@ -10,8 +10,8 @@ from .models import Condo, Inmueble, Resident
 from rolepermissions.roles import assign_role
 from django_countries.serializer_fields import CountryField
 from django_countries.serializers import CountryFieldMixin
-from rest_auth.serializers import PasswordResetSerializer
-
+from rest_auth.serializers import PasswordResetSerializer, TokenSerializer
+from rest_auth.models import TokenModel
 User = get_user_model()
 class CustomPwdResetSerializer(PasswordResetSerializer):
 
@@ -24,6 +24,8 @@ class CustomPwdResetSerializer(PasswordResetSerializer):
 		if not self.reset_form.is_valid():
 			raise serializers.ValidationError(self.reset_form.errors)
 		return value
+
+
 
 
 class CustomRegisterSerializer(RegisterSerializer):
@@ -81,6 +83,18 @@ class UserSerializer(serializers.ModelSerializer):
 		]
 		model  = User
 		read_only_fields= ['last_login','date_joined']
+
+class customTokenSerializer(TokenSerializer):
+	class Meta:
+		fields= '__all__'
+		model = TokenModel
+	user = UserSerializer(read_only= True)
+	# def get_user(self,token):
+	# 	user = token.user
+	# 	print(user)
+	# 	serializer= 
+	# 	return {}
+
 
 class BaseUserSerializer(serializers.ModelSerializer):
 	country = CountryField(country_dict=True)
