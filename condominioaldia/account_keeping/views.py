@@ -1,7 +1,7 @@
 """Views for the account_keeping app."""
 import decimal
 from datetime import date
-
+from rest_framework.views import APIView
 from django.conf import settings
 from django.contrib.auth.decorators import login_required
 from django.urls import reverse, reverse_lazy
@@ -26,7 +26,7 @@ from . import model_resources
 from .freckle_api import get_unpaid_invoices_with_transactions
 from .utils import get_date as d
 
-from . serializers import AccountSerializer, TransactionSerializer, InvoiceSerializer, OrderSerializer
+from . serializers import AccountSerializer,CurrencySerializer, TransactionSerializer, InvoiceSerializer, OrderSerializer
 DEPOSIT = models.Transaction.TRANSACTION_TYPES['deposit']
 WITHDRAWAL = models.Transaction.TRANSACTION_TYPES['withdrawal']
 from .permissions import IsCondoOrReadOnly
@@ -828,10 +828,33 @@ class BankAccountsViewSet(CreateListRetrieveViewSet, mixins.DestroyModelMixin, m
             return self.queryset.filter(user__condo__inmuebles__resident=self.request.user.resident)
         elif self.request.user.is_staff or self.request.user.is_superuser:
             return self.queryset
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        if serializer.is_valid():
+            print(serializer.validated_data)
+            self.perform_create(serializer)
+        else:
+            print(serializer.errors)
+        serializer.is_valid(raise_exception=True)
+        
+        headers = self.get_success_headers(serializer.data)
+        return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
 
     def perform_create(self, serializer):
         serializer.save(user= self.request.user)
 
+class CurrencyView(APIView):
+    queryset = models.Currency.objects.all()
+    serializer_class = CurrencySerializer
+    permission_classes= (IsAuthenticated, )
+
+    def get_queryset(self):
+        return self.queryset.all()
+
+    def get(self, request):
+        qs= self.get_queryset()
+        currency_list= self.serializer_class(qs, many= True)
+        return Response(currency_list.data, status=status.HTTP_200_OK) 
 
 class TransactionViewSet(CreateListRetrieveViewSet, mixins.DestroyModelMixin, mixins.UpdateModelMixin):
     queryset = models.Transaction.objects.all()

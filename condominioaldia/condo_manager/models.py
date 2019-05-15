@@ -78,7 +78,18 @@ class User(AbstractUser):
 
 	@property
 	def role(self):
-		return get_user_roles(self)
+		roles = []
+		if self.is_condo:
+			roles.append('condo')
+		if self.is_rentee:
+			roles.append('rentee')
+		if self.is_resident:
+			roles.append('resident')
+		if self.is_superuser:
+			roles.append('superuser')
+		if self.is_staff:
+			roles.append('staff')
+		return roles
 
 class Resident(models.Model):
 	user= models.OneToOneField(User, on_delete = models.CASCADE)
@@ -219,7 +230,7 @@ class Condo(models.Model):
 
 
 class Rentee(models.Model):
-	user = models.OneToOneField(User, on_delete = models.CASCADE, null = True, verbose_name = _('user'))
+	user = models.OneToOneField(User, on_delete = models.CASCADE, null = False, verbose_name = _('user'))
 	since =models.DateTimeField(auto_now_add= True)
 	terms_accepted = models.BooleanField(null = True, default = False, verbose_name = _('Terms'))
 

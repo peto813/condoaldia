@@ -13,6 +13,8 @@ from django_countries.serializers import CountryFieldMixin
 from rest_auth.serializers import PasswordResetSerializer, TokenSerializer
 from rest_auth.models import TokenModel
 User = get_user_model()
+
+
 class CustomPwdResetSerializer(PasswordResetSerializer):
 
 	def validate_email(self, value):
@@ -68,6 +70,7 @@ class CustomRegisterSerializer(RegisterSerializer):
 
 class UserSerializer(serializers.ModelSerializer):
 	condo = serializers.HyperlinkedIdentityField(view_name= 'condo_manager:condo-detail')
+	role= serializers.ListField(read_only= True)
 	class Meta:
 		fields = [
 			'first_name',
@@ -79,15 +82,18 @@ class UserSerializer(serializers.ModelSerializer):
 			'mobile',
 			'office',
 			'other',
-			'condo'
+			'condo',
+			'role'
 		]
 		model  = User
 		read_only_fields= ['last_login','date_joined']
+
 
 class customTokenSerializer(TokenSerializer):
 	class Meta:
 		fields= '__all__'
 		model = TokenModel
+	
 	user = UserSerializer(read_only= True)
 	# def get_user(self,token):
 	# 	user = token.user

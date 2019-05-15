@@ -5,11 +5,14 @@ from condo_manager.models import Inmueble
 class IsCondoOwnerOrReadOnly(permissions.BasePermission):
 
 	def has_object_permission(self, request, view, obj):
+		#import pdb; pdb.set_trace()
 		if request.user.is_condo:
 			if request.user.condo == obj:
 				return True
 		elif request.user.is_resident:
 			return Inmueble.objects.filter(condo= obj, resident = request.user.resident).exists() and request.method in permissions.SAFE_METHODS
+		elif request.user.is_rentee:
+			return Inmueble.objects.filter(condo= obj, rentee = request.user.rentee).exists() and request.method in permissions.SAFE_METHODS
 		return False
 
 class IsUserOwnerOrReadOnly(permissions.BasePermission):

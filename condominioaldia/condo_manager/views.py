@@ -27,14 +27,15 @@ User = get_user_model()
 
 from rest_auth.views import LoginView
 
-
 class CustomLoginView(LoginView):
-	def get_response(self):
-		print(self.request.data)
-		orginal_response = super().get_response()
-		mydata = {"message": "some message", "status": "success"}
-		orginal_response.data.update(mydata)
-		return orginal_response
+	def post(self, request, *args, **kwargs):
+		self.request = request
+		self.serializer = self.get_serializer(data=self.request.data,context={'request': request})
+		if self.serializer.is_valid():
+			self.login()
+			return self.get_response()
+		print(self.serializer.errors)
+		return Response(self.serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 class CustomRegisterView(RegisterView):
 	def create(self, request, *args, **kwargs):
@@ -51,7 +52,7 @@ class CustomRegisterView(RegisterView):
 class CustomPwdResetView(GenericAPIView):
 	'''empty filler view for rest auth password reset endpoint'''
 	def post(self, request, *args, **kwargs):
-		a
+		
 		# Create a serializer with request.data
 		serializer = self.get_serializer(data=request.data)
 		serializer.is_valid(raise_exception=True)

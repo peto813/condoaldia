@@ -28,6 +28,7 @@ urlpatterns = [
         name='account_keeping_transaction_update'),
 
     path('transaction/create/',views.TransactionCreateView.as_view(),name='account_keeping_transaction_create'),
+    
 
     # url(r'invoice/(?P<pk>\d+)/$',
     #     views.InvoiceUpdateView.as_view(),

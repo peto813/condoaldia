@@ -5,10 +5,14 @@ from condo_manager.serializers import BaseUserSerializer
 from django.contrib.auth import get_user_model
 from rest_framework.reverse import reverse
 from django.utils.translation import ugettext_lazy as _
+from currency_history.models import Currency
 
 User = get_user_model()
 #HyperlinkedModelSerializer
-
+class CurrencySerializer(serializers.ModelSerializer):
+	class Meta:
+		model= Currency
+		fields= '__all__'
 
 # class CustomerHyperlink(serializers.HyperlinkedRelatedField):
 # 	# We define these as class attributes, so we don't need to pass them as arguments.
