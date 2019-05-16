@@ -5,7 +5,7 @@ from condo_manager.models import Inmueble
 class IsCondoOwnerOrReadOnly(permissions.BasePermission):
 
 	def has_object_permission(self, request, view, obj):
-		#import pdb; pdb.set_trace()
+		import pdb; pdb.set_trace()
 		if request.user.is_condo:
 			if request.user.condo == obj:
 				return True
