@@ -14,6 +14,25 @@ from rest_auth.serializers import PasswordResetSerializer, TokenSerializer
 from rest_auth.models import TokenModel
 User = get_user_model()
 
+class DynamicFieldsModelSerializer(serializers.ModelSerializer):
+    """
+    A ModelSerializer that takes an additional `fields` argument that
+    controls which fields should be displayed.
+    """
+
+    def __init__(self, *args, **kwargs):
+        # Don't pass the 'fields' arg up to the superclass
+        fields = kwargs.pop('fields', None)
+
+        # Instantiate the superclass normally
+        super(DynamicFieldsModelSerializer, self).__init__(*args, **kwargs)
+
+        if fields is not None:
+            # Drop any fields that are not specified in the `fields` argument.
+            allowed = set(fields)
+            existing = set(self.fields)
+            for field_name in existing - allowed:
+                self.fields.pop(field_name)
 
 class CustomPwdResetSerializer(PasswordResetSerializer):
 
@@ -68,9 +87,11 @@ class CustomRegisterSerializer(RegisterSerializer):
 		return user
 
 
-class UserSerializer(serializers.ModelSerializer):
-	condo = serializers.HyperlinkedIdentityField(view_name= 'condo_manager:condo-detail')
-	role= serializers.ListField(read_only= True)
+class UserSerializer(DynamicFieldsModelSerializer):
+	#condo = serializers.HyperlinkedIdentityField(view_name= 'condo_manager:condo-detail')
+	#resident = None
+	#rentee = None
+	role = serializers.ListField(read_only= True)
 	class Meta:
 		fields = [
 			'first_name',
@@ -82,24 +103,18 @@ class UserSerializer(serializers.ModelSerializer):
 			'mobile',
 			'office',
 			'other',
-			'condo',
+			#'condo',
+			#'resident',
+			#'rentee',
 			'role'
 		]
 		model  = User
 		read_only_fields= ['last_login','date_joined']
 
 
-class customTokenSerializer(TokenSerializer):
-	class Meta:
-		fields= '__all__'
-		model = TokenModel
-	
-	user = UserSerializer(read_only= True)
-	# def get_user(self,token):
-	# 	user = token.user
-	# 	print(user)
-	# 	serializer= 
-	# 	return {}
+
+class RenteeSerializer(serializers.Serializer):
+    pass
 
 
 class BaseUserSerializer(serializers.ModelSerializer):
@@ -111,7 +126,8 @@ class BaseUserSerializer(serializers.ModelSerializer):
 		}
 
 class CondoSerializer(CountryFieldMixin, serializers.ModelSerializer):
-	user = serializers.HyperlinkedIdentityField(view_name= 'condo_manager:user-detail')
+	#user = serializers.HyperlinkedIdentityField(view_name= 'condo_manager:user-detail')
+	user = UserSerializer()
 	class Meta:
 		exclude = ['terms_accepted']
 		model  = Condo
@@ -169,3 +185,26 @@ class ResidentSerializer(serializers.ModelSerializer):
 			inmueble.save()
 			return resident
 		return user.resident
+
+class customTokenSerializer(TokenSerializer):
+	'''
+	Serializer used when logging in, returns user data
+	'''
+	profile_serializers = {
+		'condo': CondoSerializer,
+		'resident' : ResidentSerializer,
+		'rentee': RenteeSerializer
+	}
+
+	class Meta:
+		fields= '__all__'
+		model = TokenModel
+	
+	account = serializers.SerializerMethodField(read_only=True)
+
+	def get_account(self, obj):
+		profile_map = obj.user.get_profile_map()
+		role = profile_map['role']
+		profile_serializer = self.profile_serializers[role]
+		return  profile_serializer(profile_map['profile']).data
+

@@ -1,7 +1,7 @@
 from django.shortcuts import render
 from rest_framework import mixins, viewsets
 from django.shortcuts import get_object_or_404
-from condo_manager.models import Condo, Inmueble, Resident
+from .models import Condo, Inmueble, Resident
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework import status
 from rest_framework.views import APIView
@@ -18,8 +18,8 @@ from rest_auth.app_settings import create_token
 from allauth.account import app_settings as allauth_settings
 from rest_framework.generics import ListCreateAPIView, DestroyAPIView
 from django.contrib.auth import get_user_model
-from condo_manager.serializers import  UserSerializer, CondoSerializer, InmuebleSerializer, ResidentSerializer, CustomPwdResetSerializer
-from condo_manager.permissions import *
+from .serializers import  UserSerializer, CondoSerializer, InmuebleSerializer, ResidentSerializer, CustomPwdResetSerializer
+from .permissions import *
 from django.utils.translation import ugettext_lazy as _
 from rest_framework.generics import GenericAPIView
 
@@ -33,8 +33,7 @@ class CustomLoginView(LoginView):
 		self.serializer = self.get_serializer(data=self.request.data,context={'request': request})
 		if self.serializer.is_valid():
 			self.login()
-			return self.get_response()
-		print(self.serializer.errors)
+			return self.get_response()		
 		return Response(self.serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 class CustomRegisterView(RegisterView):
@@ -124,7 +123,7 @@ class CustomConfirmEmailView(ConfirmEmailView):
 		if app_settings.LOGIN_ON_EMAIL_CONFIRMATION:
 			resp = self.login_on_confirm(confirmation)
 			if resp is not None:
-				return res
+				return resp
 		redirect_url = self.get_redirect_url()
 		if not redirect_url:
 			ctx = self.get_context_data()

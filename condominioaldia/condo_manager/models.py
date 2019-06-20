@@ -83,6 +83,26 @@ class User(AbstractUser):
         '''
         send_mail(subject, message, from_email, [self.email], fail_silently)
 
+    def get_profile_map(self):
+        '''
+        Returns mapped profile object
+        based on user role
+        '''
+        #import pdb; pdb.set_trace()
+        role = self.role[0]
+        if role == 'condo':
+            obj = self.condo
+        elif role =='resident':
+            obj = self.resident
+        elif role =='rentee':
+            obj = self.rentee
+        else:
+            return None
+        return {
+            'role': role,
+            'profile': obj
+        }
+
     @property
     def role(self):
         roles = []
