@@ -71,7 +71,8 @@ class Account(models.Model):
         'currency_history.Currency',
         related_name='accounts',
         verbose_name=_('Currency'),
-        on_delete = models.PROTECT
+        on_delete = models.PROTECT,
+        null  = True
     )
 
     initial_amount = models.DecimalField(
@@ -422,7 +423,8 @@ class Order(models.Model, AmountMixin):
         'currency_history.Currency',
         related_name='invoices',
         verbose_name=_('Currency'),
-        on_delete = models.PROTECT
+        on_delete = models.PROTECT,
+        null = True
     )
 
     amount_net = models.DecimalField(
@@ -555,6 +557,6 @@ class OrderDetails(models.Model):
         null=False, 
         verbose_name=_('Amount gross'),
     )
-    order = models.ForeignKey(Order, on_delete=models.CASCADE, null = False)
+    order = models.ForeignKey(Order, on_delete=models.CASCADE, null = True)
     def __str__(self):
         return self.description

@@ -97,7 +97,7 @@ class UserSerializer(DynamicFieldsModelSerializer):
 			'first_name',
 			'last_name',
 			'email',
-			'id_number',
+			#'id_number',
 			'date_joined',
 			'last_login',
 			'mobile',

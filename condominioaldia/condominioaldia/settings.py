@@ -49,7 +49,7 @@ INSTALLED_APPS = [
     'rest_auth.registration',
     'djmoney',
     'rolepermissions',
-    'django_libs',
+    #'django_libs',
     'django_countries',
     'currency_history',
     'import_export',
@@ -117,7 +117,7 @@ DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
         'NAME': 'condominioaldia_db',
-        'USER': 'alberto',
+        'USER': 'postgres',
         'PASSWORD': 'ou63ut14',
         'HOST': '127.0.0.1',
         'PORT': 5432,
